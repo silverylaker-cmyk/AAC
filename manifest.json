@@ -1,0 +1,19 @@
+{
+    "name": "그림으로 말해요",
+    "short_name": "말해요",
+    "description": "자폐 아동을 위한 보완대체의사소통(AAC) 앱 — 그림을 누르면 엄마·아빠 목소리로 말해줘요",
+    "lang": "ko",
+    "start_url": "./index.html",
+    "display": "fullscreen",
+    "orientation": "landscape",
+    "background_color": "#fdf8f2",
+    "theme_color": "#fdf8f2",
+    "icons": [
+        {
+            "src": "icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

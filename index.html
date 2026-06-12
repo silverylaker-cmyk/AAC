@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#fdf8f2">
+    <title>그림으로 말해요</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Top bar -->
+        <header class="topbar">
+            <nav class="board-tabs" id="board-tabs"></nav>
+            <div class="topbar-right">
+                <span id="voice-indicator" class="voice-indicator"></span>
+                <button id="btn-settings" class="gear-btn" aria-label="보호자 설정 (길게 누르기)">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.08a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.08a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.08a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span class="gear-hold-ring" id="gear-hold-ring"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Edit mode banner -->
+        <div id="edit-banner" class="edit-banner" style="display:none;">
+            <span>✏️ 편집 모드 — 카드를 눌러 수정하세요</span>
+            <button id="btn-exit-edit" class="btn small-btn">편집 끝내기</button>
+        </div>
+
+        <!-- Symbol grid -->
+        <main class="grid" id="grid"></main>
+    </div>
+
+    <!-- Big feedback overlay (shown while speaking) -->
+    <div id="speak-overlay" class="speak-overlay" style="display:none;">
+        <div class="speak-overlay-card">
+            <div id="speak-overlay-image" class="speak-overlay-image"></div>
+            <div id="speak-overlay-label" class="speak-overlay-label"></div>
+        </div>
+    </div>
+
+    <!-- Caregiver gate modal -->
+    <div id="gate-modal" class="modal" style="display:none;">
+        <div class="modal-box small">
+            <h2>보호자 확인</h2>
+            <p id="gate-question" class="gate-question"></p>
+            <input type="number" id="gate-answer" inputmode="numeric" placeholder="정답 입력">
+            <div class="modal-actions">
+                <button id="gate-cancel" class="btn secondary-btn">취소</button>
+                <button id="gate-ok" class="btn primary-btn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h2>보호자 설정</h2>
+
+            <section class="settings-section">
+                <h3>🔊 목소리 선택</h3>
+                <div class="voice-options" id="voice-options">
+                    <label><input type="radio" name="voice" value="mom"><span>엄마 목소리</span></label>
+                    <label><input type="radio" name="voice" value="dad"><span>아빠 목소리</span></label>
+                    <label><input type="radio" name="voice" value="tts"><span>기계 음성 (TTS)</span></label>
+                </div>
+                <p class="hint">엄마/아빠 목소리는 녹음된 단어만 재생되고, 녹음이 없는 단어는 기계 음성으로 대신 읽어줍니다.</p>
+            </section>
+
+            <section class="settings-section">
+                <h3>🎙️ 목소리 일괄 녹음</h3>
+                <p class="hint">모든 단어를 차례대로 보여주며 녹음합니다. 5분이면 충분해요.</p>
+                <div class="row-buttons">
+                    <button id="btn-batch-mom" class="btn secondary-btn">엄마 목소리 녹음하기</button>
+                    <button id="btn-batch-dad" class="btn secondary-btn">아빠 목소리 녹음하기</button>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>🗣️ 기계 음성 속도</h3>
+                <input type="range" id="tts-rate" min="0.5" max="1.3" step="0.1">
+                <span id="tts-rate-value"></span>
+                <button id="btn-tts-test" class="btn small-btn">들어보기</button>
+            </section>
+
+            <section class="settings-section">
+                <h3>✏️ 카드 편집</h3>
+                <button id="btn-enter-edit" class="btn primary-btn">편집 모드 시작</button>
+            </section>
+
+            <section class="settings-section">
+                <h3>💾 백업</h3>
+                <p class="hint">태블릿을 바꾸거나 초기화하기 전에 꼭 내보내기를 해두세요. 사진과 녹음이 모두 포함됩니다.</p>
+                <div class="row-buttons">
+                    <button id="btn-export" class="btn secondary-btn">파일로 내보내기</button>
+                    <button id="btn-import" class="btn secondary-btn">파일에서 가져오기</button>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>🖥️ 화면</h3>
+                <button id="btn-fullscreen" class="btn secondary-btn">전체 화면 켜기/끄기</button>
+                <p class="hint">아이가 다른 앱으로 나가지 못하게 하려면 안드로이드의 ‘화면 고정’(설정 → 보안 → 앱 고정) 기능을 함께 사용하세요.</p>
+            </section>
+
+            <p class="attribution">그림 상징 검색 기능은 <a href="https://arasaac.org" target="_blank" rel="noopener">ARASAAC</a>
+                (저작자: Sergio Palao, 소유: Government of Aragón, 라이선스: CC BY-NC-SA)를 사용합니다.</p>
+
+            <div class="modal-actions">
+                <button id="settings-close" class="btn primary-btn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cell editor modal -->
+    <div id="editor-modal" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h2 id="editor-title">카드 편집</h2>
+
+            <div class="editor-preview" id="editor-preview"></div>
+
+            <label class="field-label">단어 (눌렀을 때 말할 내용)</label>
+            <input type="text" id="editor-label" placeholder="예: 물 주세요">
+
+            <label class="field-label">그림</label>
+            <div class="row-buttons">
+                <button id="btn-pick-photo" class="btn secondary-btn">📷 사진/파일</button>
+                <button id="btn-pick-arasaac" class="btn secondary-btn">🔍 그림 검색</button>
+                <button id="btn-pick-emoji" class="btn secondary-btn">😊 이모지</button>
+            </div>
+            <input type="file" id="photo-input" accept="image/*" style="display:none;">
+
+            <label class="field-label">카테고리</label>
+            <select id="editor-board"></select>
+
+            <label class="field-label">목소리 녹음</label>
+            <div class="rec-row" data-profile="mom">
+                <span class="rec-name">엄마</span>
+                <button class="btn small-btn rec-btn" data-profile="mom">● 녹음</button>
+                <button class="btn small-btn rec-play" data-profile="mom" disabled>▶ 듣기</button>
+                <button class="btn small-btn rec-del" data-profile="mom" disabled>지우기</button>
+            </div>
+            <div class="rec-row" data-profile="dad">
+                <span class="rec-name">아빠</span>
+                <button class="btn small-btn rec-btn" data-profile="dad">● 녹음</button>
+                <button class="btn small-btn rec-play" data-profile="dad" disabled>▶ 듣기</button>
+                <button class="btn small-btn rec-del" data-profile="dad" disabled>지우기</button>
+            </div>
+
+            <div class="modal-actions">
+                <button id="editor-delete" class="btn danger-btn">카드 삭제</button>
+                <button id="editor-cancel" class="btn secondary-btn">취소</button>
+                <button id="editor-save" class="btn primary-btn">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji picker modal -->
+    <div id="emoji-modal" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h2>이모지 선택</h2>
+            <input type="text" id="emoji-input" placeholder="키보드로 이모지를 직접 입력해도 돼요">
+            <div class="emoji-grid" id="emoji-grid"></div>
+            <div class="modal-actions">
+                <button id="emoji-cancel" class="btn secondary-btn">취소</button>
+                <button id="emoji-ok" class="btn primary-btn">선택</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARASAAC search modal -->
+    <div id="arasaac-modal" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h2>그림 상징 검색</h2>
+            <p class="hint">인터넷 연결이 필요합니다. 선택한 그림은 태블릿에 저장되어 이후엔 인터넷 없이 보입니다.</p>
+            <div class="search-row">
+                <input type="text" id="arasaac-query" placeholder="예: 물, 화장실, 안아주세요">
+                <button id="arasaac-search" class="btn primary-btn">검색</button>
+            </div>
+            <div class="arasaac-results" id="arasaac-results"></div>
+            <div class="modal-actions">
+                <button id="arasaac-close" class="btn secondary-btn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch recording modal -->
+    <div id="batch-modal" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h2 id="batch-title">목소리 녹음</h2>
+            <p id="batch-progress" class="batch-progress"></p>
+            <div class="editor-preview" id="batch-preview"></div>
+            <p id="batch-word" class="batch-word"></p>
+            <p class="hint">아이에게 말하듯 자연스럽고 따뜻하게 읽어주세요.</p>
+            <div class="row-buttons">
+                <button id="batch-rec" class="btn primary-btn">● 녹음</button>
+                <button id="batch-play" class="btn secondary-btn" disabled>▶ 듣기</button>
+            </div>
+            <div class="modal-actions">
+                <button id="batch-quit" class="btn secondary-btn">종료</button>
+                <button id="batch-skip" class="btn secondary-btn">건너뛰기</button>
+                <button id="batch-next" class="btn primary-btn" disabled>저장하고 다음</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="import-input" accept=".json,application/json" style="display:none;">
+
+    <script src="app.js"></script>
+</body>
+
+</html>
