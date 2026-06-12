@@ -4,49 +4,122 @@ const ARASAAC_SEARCH = 'https://api.arasaac.org/api/pictograms/ko/search/';
 const ARASAAC_IMAGE = (id) => `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
 
 // Fitzgerald key 색상: 카테고리별 고정 색으로 위치·색 일관성 유지
+const BOARD_COLORS = [
+    '#f2a7c3', '#f5d76e', '#f5a96e', '#8ec1f0', '#9fd9a0',
+    '#c8a8e9', '#f29b9b', '#7fd6cf', '#b6c77f', '#e0b48f', '#a9b6f0', '#f0a8d0',
+];
+
 const DEFAULT_BOARDS = [
     { id: 'core',   name: '핵심',  color: '#f2a7c3', order: 0 },
     { id: 'people', name: '사람',  color: '#f5d76e', order: 1 },
     { id: 'food',   name: '음식',  color: '#f5a96e', order: 2 },
     { id: 'feel',   name: '느낌',  color: '#8ec1f0', order: 3 },
     { id: 'act',    name: '활동',  color: '#9fd9a0', order: 4 },
+    { id: 'place',  name: '장소',  color: '#c8a8e9', order: 5 },
+    { id: 'body',   name: '몸',    color: '#f29b9b', order: 6 },
 ];
 
 const DEFAULT_CELLS = [
+    // 핵심어휘 (core vocabulary)
     { boardId: 'core', label: '주세요', emoji: '🙏' },
     { boardId: 'core', label: '더', emoji: '➕' },
+    { boardId: 'core', label: '그만', emoji: '✋' },
     { boardId: 'core', label: '싫어요', emoji: '🙅' },
     { boardId: 'core', label: '좋아요', emoji: '👍' },
-    { boardId: 'core', label: '도와주세요', emoji: '🆘' },
-    { boardId: 'core', label: '그만', emoji: '✋' },
     { boardId: 'core', label: '네', emoji: '⭕' },
     { boardId: 'core', label: '아니요', emoji: '❌' },
+    { boardId: 'core', label: '도와주세요', emoji: '🆘' },
+    { boardId: 'core', label: '안돼요', emoji: '🚫' },
+    { boardId: 'core', label: '끝났어요', emoji: '🏁' },
+    { boardId: 'core', label: '같이해요', emoji: '🤝' },
+    { boardId: 'core', label: '또 해요', emoji: '🔁' },
+    { boardId: 'core', label: '기다려요', emoji: '⏳' },
+    { boardId: 'core', label: '이거', emoji: '👉' },
+    { boardId: 'core', label: '저거', emoji: '👈' },
+    // 사람 (people)
     { boardId: 'people', label: '엄마', emoji: '👩' },
     { boardId: 'people', label: '아빠', emoji: '👨' },
+    { boardId: 'people', label: '할머니', emoji: '👵' },
+    { boardId: 'people', label: '할아버지', emoji: '👴' },
+    { boardId: 'people', label: '누나/형', emoji: '🧑' },
+    { boardId: 'people', label: '동생', emoji: '👶' },
     { boardId: 'people', label: '선생님', emoji: '🧑‍🏫' },
     { boardId: 'people', label: '친구', emoji: '🧒' },
+    { boardId: 'people', label: '의사 선생님', emoji: '🧑‍⚕️' },
+    { boardId: 'people', label: '나', emoji: '🙋' },
+    // 음식 (food)
     { boardId: 'food', label: '물', emoji: '💧' },
     { boardId: 'food', label: '우유', emoji: '🥛' },
     { boardId: 'food', label: '밥', emoji: '🍚' },
-    { boardId: 'food', label: '간식', emoji: '🍪' },
+    { boardId: 'food', label: '빵', emoji: '🍞' },
+    { boardId: 'food', label: '과자', emoji: '🍪' },
     { boardId: 'food', label: '과일', emoji: '🍎' },
-    { boardId: 'feel', label: '아파요', emoji: '🤕' },
-    { boardId: 'feel', label: '졸려요', emoji: '😴' },
-    { boardId: 'feel', label: '기뻐요', emoji: '😊' },
+    { boardId: 'food', label: '바나나', emoji: '🍌' },
+    { boardId: 'food', label: '딸기', emoji: '🍓' },
+    { boardId: 'food', label: '주스', emoji: '🧃' },
+    { boardId: 'food', label: '김밥', emoji: '🍙' },
+    { boardId: 'food', label: '라면', emoji: '🍜' },
+    { boardId: 'food', label: '아이스크림', emoji: '🍦' },
+    { boardId: 'food', label: '사탕', emoji: '🍬' },
+    { boardId: 'food', label: '계란', emoji: '🥚' },
+    { boardId: 'food', label: '고기', emoji: '🍗' },
+    { boardId: 'food', label: '피자', emoji: '🍕' },
+    // 느낌 (feelings)
+    { boardId: 'feel', label: '행복해요', emoji: '😊' },
+    { boardId: 'feel', label: '슬퍼요', emoji: '😢' },
     { boardId: 'feel', label: '화나요', emoji: '😠' },
     { boardId: 'feel', label: '무서워요', emoji: '😨' },
+    { boardId: 'feel', label: '아파요', emoji: '🤕' },
+    { boardId: 'feel', label: '졸려요', emoji: '😴' },
+    { boardId: 'feel', label: '배고파요', emoji: '🍽️' },
+    { boardId: 'feel', label: '목말라요', emoji: '🥤' },
+    { boardId: 'feel', label: '더워요', emoji: '🥵' },
+    { boardId: 'feel', label: '추워요', emoji: '🥶' },
+    { boardId: 'feel', label: '심심해요', emoji: '😑' },
+    // 활동 (activities)
     { boardId: 'act', label: '화장실', emoji: '🚽' },
     { boardId: 'act', label: '놀아요', emoji: '🧸' },
+    { boardId: 'act', label: '자요', emoji: '🛏️' },
+    { boardId: 'act', label: '씻어요', emoji: '🛁' },
+    { boardId: 'act', label: '양치해요', emoji: '🪥' },
+    { boardId: 'act', label: '옷 입어요', emoji: '👕' },
     { boardId: 'act', label: '밖에 가요', emoji: '🌳' },
     { boardId: 'act', label: '안아주세요', emoji: '🤗' },
     { boardId: 'act', label: '음악 들어요', emoji: '🎵' },
+    { boardId: 'act', label: 'TV 봐요', emoji: '📺' },
+    { boardId: 'act', label: '책 읽어요', emoji: '📚' },
+    { boardId: 'act', label: '그림 그려요', emoji: '🎨' },
+    { boardId: 'act', label: '공놀이', emoji: '⚽' },
+    // 장소 (places)
+    { boardId: 'place', label: '집', emoji: '🏠' },
+    { boardId: 'place', label: '학교', emoji: '🏫' },
+    { boardId: 'place', label: '방', emoji: '🚪' },
+    { boardId: 'place', label: '밖', emoji: '🌳' },
+    { boardId: 'place', label: '마트', emoji: '🛒' },
+    { boardId: 'place', label: '병원', emoji: '🏥' },
+    { boardId: 'place', label: '놀이터', emoji: '🛝' },
+    { boardId: 'place', label: '차', emoji: '🚗' },
+    { boardId: 'place', label: '식당', emoji: '🍴' },
+    // 몸 (body)
+    { boardId: 'body', label: '머리', emoji: '👤' },
+    { boardId: 'body', label: '배', emoji: '🫃' },
+    { boardId: 'body', label: '손', emoji: '✋' },
+    { boardId: 'body', label: '발', emoji: '🦶' },
+    { boardId: 'body', label: '눈', emoji: '👁️' },
+    { boardId: 'body', label: '코', emoji: '👃' },
+    { boardId: 'body', label: '입', emoji: '👄' },
+    { boardId: 'body', label: '귀', emoji: '👂' },
+    { boardId: 'body', label: '이', emoji: '🦷' },
 ];
 
 const EMOJI_CHOICES = [
-    '🙏','➕','🙅','👍','👎','🆘','✋','⭕','❌','👩','👨','👵','👴','🧑‍🏫','🧒','👶',
-    '💧','🥛','🍚','🍪','🍎','🍌','🍞','🍜','🍦','🧃','🍕','🍗',
-    '🤕','😴','😊','😠','😨','😢','🤒','🥶','🥵','😋',
-    '🚽','🧸','🌳','🤗','🎵','📺','📚','🚗','🛁','🛏️','⚽','🎨','✏️','🏫','🏠','🐶','🐱','☀️','🌙','🧩'
+    '🙏','➕','🙅','👍','👎','🆘','✋','⭕','❌','🚫','🏁','🤝','🔁','⏳','👉','👈',
+    '👩','👨','👵','👴','🧑‍🏫','🧒','👶','🧑','🙋','🧑‍⚕️',
+    '💧','🥛','🍚','🍞','🍪','🍎','🍌','🍓','🧃','🍙','🍜','🍦','🍬','🥚','🍗','🍕','🍜','🥤',
+    '😊','😢','😠','😨','🤕','😴','🍽️','🥵','🥶','😑','😋','🤒','😍',
+    '🚽','🧸','🛏️','🛁','🪥','👕','🌳','🤗','🎵','📺','📚','🎨','⚽','🚶','🧩',
+    '🏠','🏫','🚪','🛒','🏥','🛝','🚗','🍴',
+    '👤','🫃','🦶','👁️','👃','👄','👂','🦷','🐶','🐱','☀️','🌙',
 ];
 
 // ===== IndexedDB =====
@@ -84,7 +157,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9 };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1 };
 let activeBoardId = 'core';
 let editMode = false;
 let currentAudio = null;
@@ -178,6 +251,22 @@ function renderGrid() {
             badge.className = 'edit-badge';
             badge.textContent = '✏️';
             div.appendChild(badge);
+
+            const orderCtl = document.createElement('div');
+            orderCtl.className = 'cell-order';
+            const up = document.createElement('button');
+            up.className = 'ord-btn';
+            up.textContent = '↑';
+            up.setAttribute('aria-label', '앞으로 이동');
+            up.addEventListener('click', (e) => { e.stopPropagation(); moveCell(cell, -1); });
+            const down = document.createElement('button');
+            down.className = 'ord-btn';
+            down.textContent = '↓';
+            down.setAttribute('aria-label', '뒤로 이동');
+            down.addEventListener('click', (e) => { e.stopPropagation(); moveCell(cell, 1); });
+            orderCtl.append(up, down);
+            div.appendChild(orderCtl);
+
             div.addEventListener('click', () => openEditor(cell));
         } else {
             div.addEventListener('click', () => speakCell(cell, div));
@@ -197,6 +286,23 @@ function renderGrid() {
 function updateVoiceIndicator() {
     const names = { mom: '엄마 목소리', dad: '아빠 목소리', tts: '기계 음성' };
     $('voice-indicator').textContent = names[settings.voice] || '';
+}
+
+function applyCardScale() {
+    document.documentElement.style.setProperty('--cell-scale', settings.cardScale || 1);
+}
+
+async function moveCell(cell, dir) {
+    const list = cells.filter(c => c.boardId === cell.boardId).sort((a, b) => a.order - b.order);
+    const i = list.findIndex(c => c.id === cell.id);
+    const j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    const a = list[i], b = list[j];
+    const tmp = a.order; a.order = b.order; b.order = tmp;
+    await dbPut('cells', a);
+    await dbPut('cells', b);
+    cells = await dbGetAll('cells');
+    renderGrid();
 }
 
 // ===== Speech =====
@@ -320,6 +426,9 @@ function openSettings() {
     });
     $('tts-rate').value = settings.ttsRate;
     $('tts-rate-value').textContent = `${settings.ttsRate}배`;
+    $('card-scale').value = settings.cardScale || 1;
+    $('card-scale-value').textContent = `${Number(settings.cardScale || 1).toFixed(2)}배`;
+    renderBoardManager();
     $('settings-modal').style.display = 'flex';
 }
 
@@ -339,6 +448,16 @@ function setupSettings() {
         $('tts-rate-value').textContent = `${v}배`;
     });
     $('btn-tts-test').addEventListener('click', () => speakTts('안녕하세요, 반가워요'));
+
+    $('card-scale').addEventListener('input', () => {
+        const v = parseFloat($('card-scale').value);
+        saveSetting('cardScale', v);
+        $('card-scale-value').textContent = `${v.toFixed(2)}배`;
+        applyCardScale();
+    });
+
+    $('btn-add-board').addEventListener('click', () => openBoardEditor(null));
+    $('btn-load-starter').addEventListener('click', loadStarterPack);
 
     $('btn-enter-edit').addEventListener('click', () => {
         editMode = true;
@@ -363,6 +482,161 @@ function setupSettings() {
         if (document.fullscreenElement) document.exitFullscreen();
         else document.documentElement.requestFullscreen().catch(() => {});
     });
+}
+
+// ===== Board (folder) management =====
+let editingBoard = null;       // null이면 새 폴더
+let pendingBoardColor = BOARD_COLORS[0];
+
+function renderBoardManager() {
+    const wrap = $('board-manager');
+    wrap.innerHTML = '';
+    const sorted = [...boards].sort((a, b) => a.order - b.order);
+    sorted.forEach((b, idx) => {
+        const row = document.createElement('div');
+        row.className = 'board-row';
+
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.background = b.color;
+
+        const name = document.createElement('span');
+        name.className = 'bname';
+        const count = cells.filter(c => c.boardId === b.id).length;
+        name.textContent = `${b.name} (${count})`;
+
+        const up = document.createElement('button');
+        up.className = 'iconbtn';
+        up.textContent = '↑';
+        up.disabled = idx === 0;
+        up.addEventListener('click', () => moveBoard(b, -1));
+
+        const down = document.createElement('button');
+        down.className = 'iconbtn';
+        down.textContent = '↓';
+        down.disabled = idx === sorted.length - 1;
+        down.addEventListener('click', () => moveBoard(b, 1));
+
+        const edit = document.createElement('button');
+        edit.className = 'iconbtn';
+        edit.textContent = '✏️';
+        edit.addEventListener('click', () => openBoardEditor(b));
+
+        row.append(dot, name, up, down, edit);
+        wrap.appendChild(row);
+    });
+}
+
+async function moveBoard(board, dir) {
+    const sorted = [...boards].sort((a, b) => a.order - b.order);
+    const i = sorted.findIndex(b => b.id === board.id);
+    const j = i + dir;
+    if (j < 0 || j >= sorted.length) return;
+    const a = sorted[i], b = sorted[j];
+    const tmp = a.order; a.order = b.order; b.order = tmp;
+    await dbPut('boards', a);
+    await dbPut('boards', b);
+    boards = await dbGetAll('boards');
+    renderBoardManager();
+    renderTabs();
+    renderGrid();
+}
+
+function openBoardEditor(board) {
+    editingBoard = board;
+    pendingBoardColor = board ? board.color : BOARD_COLORS[0];
+    $('board-modal-title').textContent = board ? '폴더 편집' : '새 폴더 만들기';
+    $('board-name').value = board ? board.name : '';
+    $('board-delete').style.display = board ? 'block' : 'none';
+
+    const pal = $('color-palette');
+    pal.innerHTML = '';
+    BOARD_COLORS.forEach(c => {
+        const b = document.createElement('button');
+        b.style.background = c;
+        if (c === pendingBoardColor) b.classList.add('selected');
+        b.addEventListener('click', () => {
+            pendingBoardColor = c;
+            pal.querySelectorAll('button').forEach(x => x.classList.remove('selected'));
+            b.classList.add('selected');
+        });
+        pal.appendChild(b);
+    });
+    $('board-modal').style.display = 'flex';
+}
+
+function setupBoardEditor() {
+    $('board-cancel').addEventListener('click', () => { $('board-modal').style.display = 'none'; });
+
+    $('board-save').addEventListener('click', async () => {
+        const name = $('board-name').value.trim();
+        if (!name) { $('board-name').placeholder = '폴더 이름을 입력해 주세요'; return; }
+        if (editingBoard) {
+            editingBoard.name = name;
+            editingBoard.color = pendingBoardColor;
+            await dbPut('boards', editingBoard);
+        } else {
+            const order = Math.max(-1, ...boards.map(b => b.order)) + 1;
+            await dbPut('boards', { id: crypto.randomUUID(), name, color: pendingBoardColor, order });
+        }
+        boards = await dbGetAll('boards');
+        $('board-modal').style.display = 'none';
+        renderBoardManager();
+        renderTabs();
+        renderGrid();
+    });
+
+    $('board-delete').addEventListener('click', async () => {
+        if (!editingBoard) return;
+        if (boards.length <= 1) { alert('폴더는 최소 1개는 있어야 해요.'); return; }
+        const inBoard = cells.filter(c => c.boardId === editingBoard.id);
+        const msg = inBoard.length > 0
+            ? `'${editingBoard.name}' 폴더와 그 안의 카드 ${inBoard.length}개를 모두 삭제할까요?`
+            : `'${editingBoard.name}' 폴더를 삭제할까요?`;
+        if (!confirm(msg)) return;
+        for (const c of inBoard) await dbDelete('cells', c.id);
+        await dbDelete('boards', editingBoard.id);
+        boards = await dbGetAll('boards');
+        cells = await dbGetAll('cells');
+        if (activeBoardId === editingBoard.id) {
+            activeBoardId = [...boards].sort((a, b) => a.order - b.order)[0]?.id || 'core';
+        }
+        $('board-modal').style.display = 'none';
+        renderBoardManager();
+        renderTabs();
+        renderGrid();
+    });
+}
+
+// 기존 사용자에게 기본(추천) 카드를 추가 — 이미 있는 단어는 건너뜀
+async function loadStarterPack() {
+    const existingBoardIds = new Set(boards.map(b => b.id));
+    let maxBoardOrder = Math.max(-1, ...boards.map(b => b.order));
+    for (const b of DEFAULT_BOARDS) {
+        if (!existingBoardIds.has(b.id)) {
+            await dbPut('boards', { ...b, order: ++maxBoardOrder });
+        }
+    }
+    boards = await dbGetAll('boards');
+
+    const existing = new Set(cells.map(c => `${c.boardId}|${c.label}`));
+    let order = Math.max(0, ...cells.map(c => c.order));
+    let added = 0;
+    for (const c of DEFAULT_CELLS) {
+        const key = `${c.boardId}|${c.label}`;
+        if (existing.has(key)) continue;
+        await dbPut('cells', {
+            id: crypto.randomUUID(), boardId: c.boardId, label: c.label,
+            emoji: c.emoji, image: null, audio: { mom: null, dad: null }, order: order++,
+        });
+        existing.add(key);
+        added++;
+    }
+    cells = await dbGetAll('cells');
+    renderBoardManager();
+    renderTabs();
+    renderGrid();
+    alert(added > 0 ? `추천 카드 ${added}개를 추가했어요.` : '추가할 새 카드가 없어요. 이미 다 있어요.');
 }
 
 // ===== Cell editor =====
@@ -779,7 +1053,8 @@ async function importData(e) {
         }
         boards = await dbGetAll('boards');
         cells = await dbGetAll('cells');
-        activeBoardId = boards[0]?.id || 'core';
+        activeBoardId = [...boards].sort((a, b) => a.order - b.order)[0]?.id || 'core';
+        applyCardScale();
         renderTabs();
         renderGrid();
         updateVoiceIndicator();
@@ -794,11 +1069,13 @@ async function init() {
     db = await openDb();
     await loadSettings();
     await seedIfEmpty();
+    applyCardScale();
     renderTabs();
     renderGrid();
     updateVoiceIndicator();
     setupGate();
     setupSettings();
+    setupBoardEditor();
     setupEditor();
     setupEmojiPicker();
     setupArasaac();

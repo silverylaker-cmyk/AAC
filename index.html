@@ -91,8 +91,29 @@
             </section>
 
             <section class="settings-section">
+                <h3>🔠 카드 크기</h3>
+                <p class="hint">카드를 크게 하면 한 화면에 적게, 작게 하면 많이 보여요. (1배 ~ 2배)</p>
+                <input type="range" id="card-scale" min="1" max="2" step="0.05">
+                <span id="card-scale-value"></span>
+            </section>
+
+            <section class="settings-section">
+                <h3>📁 카테고리(폴더)</h3>
+                <p class="hint">폴더를 추가하거나 이름·색·순서(↑↓)를 바꿀 수 있어요.</p>
+                <div id="board-manager" class="board-manager"></div>
+                <button id="btn-add-board" class="btn secondary-btn">+ 폴더 추가</button>
+            </section>
+
+            <section class="settings-section">
                 <h3>✏️ 카드 편집</h3>
                 <button id="btn-enter-edit" class="btn primary-btn">편집 모드 시작</button>
+                <p class="hint">편집 모드에서 카드를 누르면 수정, 카드의 ↑↓ 버튼으로 순서를 바꿉니다.</p>
+            </section>
+
+            <section class="settings-section">
+                <h3>🗂️ 추천 카드 더 불러오기</h3>
+                <p class="hint">기본 제공 단어 카드를 한 번에 추가합니다. 이미 있는 단어는 건너뜁니다.</p>
+                <button id="btn-load-starter" class="btn secondary-btn">추천 카드 추가</button>
             </section>
 
             <section class="settings-section">
@@ -115,6 +136,22 @@
 
             <div class="modal-actions">
                 <button id="settings-close" class="btn primary-btn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Board (folder) editor modal -->
+    <div id="board-modal" class="modal" style="display:none;">
+        <div class="modal-box small">
+            <h2 id="board-modal-title">폴더 편집</h2>
+            <label class="field-label">폴더 이름</label>
+            <input type="text" id="board-name" placeholder="예: 학교">
+            <label class="field-label">색</label>
+            <div class="color-palette" id="color-palette"></div>
+            <div class="modal-actions">
+                <button id="board-delete" class="btn danger-btn">폴더 삭제</button>
+                <button id="board-cancel" class="btn secondary-btn">취소</button>
+                <button id="board-save" class="btn primary-btn">저장</button>
             </div>
         </div>
     </div>
