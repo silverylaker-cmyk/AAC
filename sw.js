@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aac-shell-v1';
+const CACHE_NAME = 'aac-shell-v2';
 const SHELL = [
     './',
     './index.html',
@@ -24,7 +24,17 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
     // ARASAAC 검색/이미지는 캐시하지 않음 (선택된 그림은 IndexedDB에 저장됨)
     if (e.request.url.includes('arasaac')) return;
+    // stale-while-revalidate: 캐시를 즉시 보여주되, 백그라운드에서 최신본을 받아
+    // 캐시를 갱신한다. 그래서 앱을 업데이트하면 다음 실행 때 자동 반영된다.
     e.respondWith(
-        caches.match(e.request).then(cached => cached || fetch(e.request))
+        caches.open(CACHE_NAME).then(cache =>
+            cache.match(e.request).then(cached => {
+                const network = fetch(e.request).then(res => {
+                    if (res && res.ok && e.request.method === 'GET') cache.put(e.request, res.clone());
+                    return res;
+                }).catch(() => cached);
+                return cached || network;
+            })
+        )
     );
 });
