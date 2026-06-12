@@ -178,6 +178,20 @@ body {
     transform: scale(0.94);
 }
 
+/* 감각 자극 최소화: 애니메이션 OFF면 카드/오버레이 움직임 제거 */
+.reduce-motion .cell {
+    transition: none;
+}
+
+.reduce-motion .cell:active,
+.reduce-motion .cell.speaking {
+    transform: none;
+}
+
+.reduce-motion .speak-overlay-card {
+    animation: none;
+}
+
 .cell-image {
     flex: 1;
     width: 100%;
@@ -641,6 +655,25 @@ input[type="range"] {
     font-size: 2rem;
     font-weight: 800;
     margin: 10px 0;
+}
+
+/* ---------- Toggle rows ---------- */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 4px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.toggle-row input[type="checkbox"] {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    accent-color: var(--primary);
+    cursor: pointer;
 }
 
 /* ---------- Usage stats ---------- */

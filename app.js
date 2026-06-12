@@ -159,7 +159,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1 };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, animations: false, rewardSound: false };
 let activeBoardId = 'core';
 let editMode = false;
 let currentAudio = null;
@@ -294,6 +294,34 @@ function applyCardScale() {
     document.documentElement.style.setProperty('--cell-scale', settings.cardScale || 1);
 }
 
+function applyAnimSetting() {
+    // 기본 OFF: 애니메이션을 끄면 reduce-motion 클래스로 카드/오버레이 움직임을 제거
+    document.documentElement.classList.toggle('reduce-motion', !settings.animations);
+}
+
+// 보상 효과음: 말하기 후 짧고 부드러운 2음 차임 (설정으로 켤 때만)
+let audioCtx = null;
+function playChime() {
+    try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        [523.25, 659.25].forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const t = now + i * 0.12;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.07, t + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.45);
+        });
+    } catch {}
+}
+
 async function moveCell(cell, dir) {
     const list = cells.filter(c => c.boardId === cell.boardId).sort((a, b) => a.order - b.order);
     const i = list.findIndex(c => c.id === cell.id);
@@ -362,6 +390,7 @@ async function speakCell(cell, cellEl) {
 
     if (cellEl) cellEl.classList.remove('speaking');
     hideSpeakOverlay();
+    if (settings.rewardSound) playChime();
 }
 
 let overlayTimer = null;
@@ -436,6 +465,8 @@ function openSettings() {
     $('tts-rate-value').textContent = `${settings.ttsRate}배`;
     $('card-scale').value = settings.cardScale || 1;
     $('card-scale-value').textContent = `${Number(settings.cardScale || 1).toFixed(2)}배`;
+    $('opt-animations').checked = !!settings.animations;
+    $('opt-reward-sound').checked = !!settings.rewardSound;
     renderBoardManager();
     renderUsageStats();
     $('settings-modal').style.display = 'flex';
@@ -497,6 +528,15 @@ function setupSettings() {
         saveSetting('cardScale', v);
         $('card-scale-value').textContent = `${v.toFixed(2)}배`;
         applyCardScale();
+    });
+
+    $('opt-animations').addEventListener('change', (e) => {
+        saveSetting('animations', e.target.checked);
+        applyAnimSetting();
+    });
+    $('opt-reward-sound').addEventListener('change', (e) => {
+        saveSetting('rewardSound', e.target.checked);
+        if (e.target.checked) playChime(); // 켤 때 미리 들려주기
     });
 
     $('btn-add-board').addEventListener('click', () => openBoardEditor(null));
@@ -1104,6 +1144,7 @@ async function importData(e) {
         cells = await dbGetAll('cells');
         activeBoardId = [...boards].sort((a, b) => a.order - b.order)[0]?.id || 'core';
         applyCardScale();
+        applyAnimSetting();
         renderTabs();
         renderGrid();
         updateVoiceIndicator();
@@ -1119,6 +1160,7 @@ async function init() {
     await loadSettings();
     await seedIfEmpty();
     applyCardScale();
+    applyAnimSetting();
     renderTabs();
     renderGrid();
     updateVoiceIndicator();
