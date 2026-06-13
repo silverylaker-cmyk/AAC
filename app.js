@@ -852,11 +852,12 @@ function updateRecRows() {
 }
 
 function setupEditor() {
-    $('editor-cancel').addEventListener('click', () => { $('editor-modal').style.display = 'none'; });
+    $('editor-cancel').addEventListener('click', () => { cancelRecording(); $('editor-modal').style.display = 'none'; });
 
     $('editor-save').addEventListener('click', async () => {
         const label = $('editor-label').value.trim();
         if (!label) { $('editor-label').placeholder = '단어를 입력해 주세요'; return; }
+        cancelRecording();
 
         const cell = editingCell || {
             id: crypto.randomUUID(),
@@ -957,6 +958,24 @@ function stopRecording() {
             resolve(blob);
         };
         mediaRecorder.stop();
+    });
+}
+
+// 녹음 중 편집 모달을 닫을 때: 마이크를 즉시 끄고 진행 중 녹음을 버린다(개인정보·배터리)
+function cancelRecording() {
+    if (mediaRecorder) {
+        try {
+            mediaRecorder.onstop = null;
+            if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        } catch {}
+        mediaRecorder = null;
+        recordedChunks = [];
+    }
+    document.querySelectorAll('.rec-btn').forEach(b => {
+        b.classList.remove('recording');
+        b.textContent = '● 녹음';
+        b.disabled = false;
     });
 }
 
