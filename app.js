@@ -396,11 +396,11 @@ function playBlob(blob) {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         currentAudio = audio;
-        audio.onended = audio.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve();
-        };
-        audio.play().catch(resolve);
+        // onpause는 stopCurrentAudio()로 중단됐을 때 약속을 풀어준다.
+        // (이게 없으면 빠르게 연속으로 누를 때 이전 카드가 멈춘 채로 남음)
+        const done = () => { URL.revokeObjectURL(url); resolve(); };
+        audio.onended = audio.onerror = audio.onpause = done;
+        audio.play().catch(done);
     });
 }
 
@@ -421,9 +421,14 @@ function logUsage(cell) {
     dbPut('logs', { cellId: cell.id, label: cell.label, ts: Date.now() }).catch(() => {});
 }
 
+let speakSeq = 0;
+
 async function speakCell(cell, cellEl) {
     stopCurrentAudio();
+    const mySeq = ++speakSeq;
     logUsage(cell);
+    // 빠르게 다른 카드를 누르면 이전 카드가 줄어든 채로 남지 않도록 정리
+    document.querySelectorAll('.cell.speaking').forEach(c => c.classList.remove('speaking'));
     if (cellEl) cellEl.classList.add('speaking');
     showSpeakOverlay(cell);
 
@@ -435,6 +440,8 @@ async function speakCell(cell, cellEl) {
     if (blob) await playBlob(blob);
     else await speakTts(cell.label);
 
+    // 말하는 도중 다른 카드를 눌렀다면(최신 호출이 아니면) 마무리는 그쪽에 맡긴다
+    if (mySeq !== speakSeq) return;
     if (cellEl) cellEl.classList.remove('speaking');
     hideSpeakOverlay();
     if (settings.rewardSound) playChime();
