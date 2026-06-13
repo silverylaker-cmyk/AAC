@@ -1056,6 +1056,11 @@ async function searchArasaac(query) {
     const q = (query ?? $('arasaac-query').value).trim();
     if (!q) return;
     const results = $('arasaac-results');
+    // 그림 검색은 인터넷이 필요한 유일한 기능 — 오프라인이면 타임아웃을 기다리지 않고 바로 안내한다
+    if (!navigator.onLine) {
+        results.innerHTML = '<div class="status">그림 검색은 인터넷이 필요해요. 연결한 뒤 다시 시도해 주세요. (직접 등록한 사진·이모지 카드는 인터넷 없이도 써요)</div>';
+        return;
+    }
     results.innerHTML = '<div class="status">🔍 그림을 찾는 중이에요…</div>';
     try {
         const res = await fetch(ARASAAC_SEARCH + encodeURIComponent(q));
