@@ -1040,6 +1040,14 @@ async function searchArasaac(query) {
             img.loading = 'lazy';
             img.alt = q;
             img.src = ARASAAC_IMAGE(item._id);
+            img.addEventListener('error', () => {
+                // 그림 로드 실패(오프라인·404) 시 깨진 이미지 아이콘 대신 차분한 자리표시
+                const ph = document.createElement('div');
+                ph.className = 'arasaac-fail';
+                ph.textContent = '🖼️';
+                ph.title = '그림을 불러오지 못했어요';
+                img.replaceWith(ph);
+            });
             img.addEventListener('click', async () => {
                 results.innerHTML = '<div class="status">그림을 저장하는 중이에요…</div>';
                 try {
