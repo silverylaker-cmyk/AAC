@@ -159,7 +159,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, arasaacRecent: [] };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, arasaacRecent: [], lastBackupAt: 0 };
 
 const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
@@ -491,6 +491,7 @@ function openSettings() {
     renderBoardManager();
     renderUsageStats();
     checkKoreanVoice();
+    renderBackupStatus();
     $('settings-modal').style.display = 'flex';
 }
 
@@ -1203,6 +1204,24 @@ async function exportData() {
     a.download = `aac-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+    await saveSetting('lastBackupAt', Date.now());
+    renderBackupStatus();
+}
+
+function renderBackupStatus() {
+    const el = $('backup-status');
+    if (!el) return;
+    const ts = settings.lastBackupAt;
+    if (!ts) {
+        el.textContent = '아직 백업한 적이 없어요.';
+        el.classList.add('never');
+        return;
+    }
+    el.classList.remove('never');
+    const days = Math.floor((Date.now() - ts) / 86400000);
+    const when = days <= 0 ? '오늘' : days === 1 ? '어제' : `${days}일 전`;
+    const date = new Date(ts).toLocaleDateString('ko-KR');
+    el.textContent = `마지막 백업: ${when} (${date})`;
 }
 
 async function importData(e) {
