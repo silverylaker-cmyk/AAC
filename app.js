@@ -229,6 +229,16 @@ function cellImageHtml(cell, container) {
     }
 }
 
+function onActivate(el, fn) {
+    // Enter/Space로도 카드를 누를 수 있게 (외부 키보드·스위치 접근)
+    el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            fn();
+        }
+    });
+}
+
 function renderGrid() {
     const grid = $('grid');
     grid.innerHTML = '';
@@ -249,6 +259,9 @@ function renderGrid() {
 
         div.appendChild(imgBox);
         div.appendChild(label);
+
+        div.setAttribute('role', 'button');
+        div.tabIndex = 0;
 
         if (editMode) {
             const badge = document.createElement('div');
@@ -271,9 +284,15 @@ function renderGrid() {
             orderCtl.append(up, down);
             div.appendChild(orderCtl);
 
-            div.addEventListener('click', () => openEditor(cell));
+            div.setAttribute('aria-label', `${cell.label} 카드 편집`);
+            const edit = () => openEditor(cell);
+            div.addEventListener('click', edit);
+            onActivate(div, edit);
         } else {
-            div.addEventListener('click', () => speakCell(cell, div));
+            div.setAttribute('aria-label', cell.label);
+            const speak = () => speakCell(cell, div);
+            div.addEventListener('click', speak);
+            onActivate(div, speak);
         }
         grid.appendChild(div);
     });
@@ -289,7 +308,12 @@ function renderGrid() {
         const add = document.createElement('div');
         add.className = 'cell add-cell';
         add.textContent = '+';
-        add.addEventListener('click', () => openEditor(null));
+        add.setAttribute('role', 'button');
+        add.setAttribute('aria-label', '카드 추가');
+        add.tabIndex = 0;
+        const addCard = () => openEditor(null);
+        add.addEventListener('click', addCard);
+        onActivate(add, addCard);
         grid.appendChild(add);
     }
 }

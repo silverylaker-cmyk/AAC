@@ -191,6 +191,11 @@ body {
     transform: scale(0.94);
 }
 
+.cell:focus-visible {
+    outline: 4px solid #6b9bd1;
+    outline-offset: 2px;
+}
+
 /* 감각 자극 최소화: 애니메이션 OFF면 카드/오버레이 움직임 제거 */
 .reduce-motion .cell {
     transition: none;
