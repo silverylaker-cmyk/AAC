@@ -159,7 +159,9 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, animations: false, rewardSound: false, arasaacRecent: [] };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, arasaacRecent: [] };
+
+const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
 let editMode = false;
 let currentAudio = null;
@@ -292,6 +294,17 @@ function updateVoiceIndicator() {
 
 function applyCardScale() {
     document.documentElement.style.setProperty('--cell-scale', settings.cardScale || 1);
+}
+
+function applyLabelSize() {
+    const scale = LABEL_SCALES[settings.labelSize] || 1;
+    document.documentElement.style.setProperty('--label-scale', scale);
+}
+
+function renderLabelSizeButtons() {
+    document.querySelectorAll('#label-size button').forEach(b => {
+        b.classList.toggle('selected', b.dataset.size === (settings.labelSize || 'medium'));
+    });
 }
 
 function applyAnimSetting() {
@@ -467,6 +480,7 @@ function openSettings() {
     $('card-scale-value').textContent = `${Number(settings.cardScale || 1).toFixed(2)}배`;
     $('opt-animations').checked = !!settings.animations;
     $('opt-reward-sound').checked = !!settings.rewardSound;
+    renderLabelSizeButtons();
     renderBoardManager();
     renderUsageStats();
     $('settings-modal').style.display = 'flex';
@@ -528,6 +542,14 @@ function setupSettings() {
         saveSetting('cardScale', v);
         $('card-scale-value').textContent = `${v.toFixed(2)}배`;
         applyCardScale();
+    });
+
+    document.querySelectorAll('#label-size button').forEach(b => {
+        b.addEventListener('click', () => {
+            saveSetting('labelSize', b.dataset.size);
+            applyLabelSize();
+            renderLabelSizeButtons();
+        });
     });
 
     $('opt-animations').addEventListener('change', (e) => {
@@ -1187,6 +1209,7 @@ async function importData(e) {
         cells = await dbGetAll('cells');
         activeBoardId = [...boards].sort((a, b) => a.order - b.order)[0]?.id || 'core';
         applyCardScale();
+        applyLabelSize();
         applyAnimSetting();
         renderTabs();
         renderGrid();
@@ -1203,6 +1226,7 @@ async function init() {
     await loadSettings();
     await seedIfEmpty();
     applyCardScale();
+    applyLabelSize();
     applyAnimSetting();
     renderTabs();
     renderGrid();

@@ -9,6 +9,7 @@
     --shadow: 0 3px 10px rgba(80, 70, 60, 0.10);
     --cell-base: 150px;
     --cell-scale: 1;
+    --label-scale: 1;
 }
 
 * {
@@ -216,7 +217,7 @@ body {
 }
 
 .cell-label {
-    font-size: 1.2rem;
+    font-size: calc(1.2rem * var(--label-scale));
     font-weight: 700;
     text-align: center;
     word-break: keep-all;
@@ -687,6 +688,31 @@ input[type="range"] {
     font-size: 2rem;
     font-weight: 800;
     margin: 10px 0;
+}
+
+/* ---------- Segmented control ---------- */
+.segmented {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.segmented button {
+    flex: 1 1 0;
+    padding: 12px 8px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--card);
+    border: 2px solid #e3dcd2;
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.segmented button.selected {
+    border-color: var(--primary);
+    background: #eef3ff;
+    color: var(--primary);
 }
 
 /* ---------- Toggle rows ---------- */
