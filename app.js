@@ -1209,9 +1209,20 @@ async function importData(e) {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
+    let data;
+    try {
+        data = JSON.parse(await file.text());
+    } catch {
+        alert('파일을 읽지 못했습니다. 내보내기로 만든 백업 파일인지 확인해 주세요.');
+        return;
+    }
+    // 구조 검증을 기존 데이터 삭제보다 먼저 한다 — 잘못된 파일로 카드가 지워지는 것을 막는다
+    if (!Array.isArray(data.boards) || !Array.isArray(data.cells)) {
+        alert('이 앱의 백업 파일이 아니에요. 설정의 "내보내기"로 만든 파일만 가져올 수 있어요.');
+        return;
+    }
     if (!confirm('가져오기를 하면 지금 카드가 모두 교체됩니다. 계속할까요?')) return;
     try {
-        const data = JSON.parse(await file.text());
         await dbClear('boards');
         await dbClear('cells');
         for (const b of data.boards) await dbPut('boards', b);
