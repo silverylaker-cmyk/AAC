@@ -171,7 +171,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, arasaacRecent: [], lastBackupAt: 0 };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, arasaacRecent: [], lastBackupAt: 0 };
 
 const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
@@ -618,11 +618,9 @@ async function speakCell(cell, cellEl) {
 }
 
 let overlayTimer = null;
-let overlayShownAt = 0;
 
 function showSpeakOverlay(cell) {
     clearTimeout(overlayTimer);
-    overlayShownAt = Date.now();
     cellImageHtml(cell, $('speak-overlay-image'));
     $('speak-overlay-label').textContent = cell.label;
     $('speak-overlay').style.display = 'flex';
@@ -633,13 +631,11 @@ function hideSpeakOverlay() {
 }
 
 function setupSpeakOverlay() {
-    // 오버레이를 누르면 재생을 멈추고 바로 그림판으로 돌아간다
-    // (긴 부모 녹음을 끝까지 기다리지 않고 다음 카드를 누를 수 있게)
-    $('speak-overlay').addEventListener('click', () => {
-        // 카드 탭(pointerup)으로 오버레이가 막 떠오른 직후, 그 같은 탭에서 생기는
-        // 합성 click이 오버레이 위로 떨어져 곧바로 닫아버리는 것을 막는다.
-        if (Date.now() - overlayShownAt < 400) return;
-        speakSeq++; // 진행 중이던 speakCell이 마무리(차임 등)를 다시 하지 않도록
+    // pointerup을 쓰면 카드 탭(pointerup → 오버레이 표시)의 합성 click이
+    // 오버레이를 곧바로 닫는 문제를 딜레이 없이 해결할 수 있다.
+    $('speak-overlay').addEventListener('pointerup', () => {
+        if (!settings.cancelOnTouch) return;
+        speakSeq++;
         stopCurrentAudio();
         document.querySelectorAll('.cell.speaking').forEach(c => c.classList.remove('speaking'));
         clearTimeout(overlayTimer);
@@ -716,6 +712,7 @@ function openSettings() {
     $('card-scale').setAttribute('aria-valuetext', `${Number(settings.cardScale || 1).toFixed(2)}배`);
     $('opt-animations').checked = !!settings.animations;
     $('opt-reward-sound').checked = !!settings.rewardSound;
+    $('opt-cancel-on-touch').checked = settings.cancelOnTouch !== false;
     renderLabelSizeButtons();
     renderBoardManager();
     renderUsageStats();
@@ -819,6 +816,9 @@ function setupSettings() {
     $('opt-reward-sound').addEventListener('change', (e) => {
         saveSetting('rewardSound', e.target.checked);
         if (e.target.checked) playChime(); // 켤 때 미리 들려주기
+    });
+    $('opt-cancel-on-touch').addEventListener('change', (e) => {
+        saveSetting('cancelOnTouch', e.target.checked);
     });
 
     $('btn-add-board').addEventListener('click', () => openBoardEditor(null));
