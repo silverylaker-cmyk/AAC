@@ -451,6 +451,20 @@ function renderGrid() {
                 }
             });
 
+            const overTrash = (x, y) => {
+                const r = $('btn-hiding').getBoundingClientRect();
+                return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+            };
+            const dropOnTrash = () => {
+                cell.hidden = true;
+                dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
+            };
+            const endDragVisuals = () => {
+                div.style.touchAction = '';
+                div.classList.remove('drag-to-hide-lift');
+                $('btn-hiding').classList.remove('drag-target', 'drag-over');
+            };
+
             div.addEventListener('pointermove', (e) => {
                 if (dragHideTimer && !dragHideActive) {
                     const d = Math.sqrt((e.clientX - startX) ** 2 + (e.clientY - startY) ** 2);
@@ -460,28 +474,50 @@ function renderGrid() {
                     }
                 }
                 if (dragHideActive) {
-                    e.preventDefault();
-                    const r = $('btn-hiding').getBoundingClientRect();
-                    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-                    $('btn-hiding').classList.toggle('drag-over', over);
+                    $('btn-hiding').classList.toggle('drag-over', overTrash(e.clientX, e.clientY));
+                }
+            });
+
+            // 터치 스크롤을 실제로 막는 유일한 방법: non-passive touchmove + preventDefault.
+            // (pointermove의 preventDefault나 도중에 바꾸는 touch-action은 진행 중인 제스처를 막지 못함)
+            // 터치 이벤트는 시작 요소(div)에 자동으로 고정되므로 손가락이 휴지통으로 가도 계속 발생한다.
+            div.addEventListener('touchmove', (e) => {
+                if (dragHideTimer && !dragHideActive && e.touches[0]) {
+                    const t = e.touches[0];
+                    const d = Math.sqrt((t.clientX - startX) ** 2 + (t.clientY - startY) ** 2);
+                    if (d > 15) { clearTimeout(dragHideTimer); dragHideTimer = null; }
+                }
+                if (dragHideActive) {
+                    e.preventDefault(); // 스크롤 차단 → pointercancel 방지
+                    const t = e.touches[0];
+                    if (t) $('btn-hiding').classList.toggle('drag-over', overTrash(t.clientX, t.clientY));
                 }
             }, { passive: false });
+
+            // 터치 드롭 처리 (pointerup보다 신뢰성 높음 — 터치 고정 덕분)
+            div.addEventListener('touchend', (e) => {
+                if (!dragHideActive) return;
+                dragHideActive = false;
+                clearTimeout(dragHideTimer);
+                dragHideTimer = null;
+                const t = e.changedTouches[0];
+                const onTrash = t && overTrash(t.clientX, t.clientY);
+                endDragVisuals();
+                if (onTrash) { e.preventDefault(); dropOnTrash(); }
+            });
 
             div.addEventListener('pointerup', (e) => {
                 clearTimeout(dragHideTimer);
                 dragHideTimer = null;
-                div.style.touchAction = '';
-                $('btn-hiding').classList.remove('drag-target', 'drag-over');
-                div.classList.remove('drag-to-hide-lift');
                 if (dragHideActive) {
+                    // 마우스 등 비터치 입력의 드롭 처리 (터치는 touchend가 담당)
                     dragHideActive = false;
-                    const r = $('btn-hiding').getBoundingClientRect();
-                    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
-                        cell.hidden = true;
-                        dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
-                    }
+                    const onTrash = overTrash(e.clientX, e.clientY);
+                    endDragVisuals();
+                    if (onTrash) dropOnTrash();
                     return;
                 }
+                endDragVisuals();
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -495,10 +531,8 @@ function renderGrid() {
             div.addEventListener('pointercancel', () => {
                 clearTimeout(dragHideTimer);
                 dragHideTimer = null;
-                dragHideActive = false;
-                div.style.touchAction = '';
-                div.classList.remove('drag-to-hide-lift');
-                $('btn-hiding').classList.remove('drag-target', 'drag-over');
+                // 터치 드래그 중 pointercancel이 와도 dragHideActive는 유지 — touchend가 드롭을 처리한다.
+                if (!dragHideActive) endDragVisuals();
             });
 
             onActivate(div, speak);
