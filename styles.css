@@ -194,6 +194,53 @@ body {
     flex-shrink: 0;
 }
 
+/* 가림 모드 배너 */
+.hiding-banner {
+    background: #ffe0e0;
+    color: #8b0000;
+}
+
+/* 가림 처리된 카드 — 일반 화면에서 회색 빈 칸 */
+.cell.cell-hidden {
+    background: #e8e4e0;
+    border-color: #ccc;
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+}
+
+.cell.cell-hidden .cell-image,
+.cell.cell-hidden .cell-label {
+    visibility: hidden;
+}
+
+/* 가림 모드 중 가려진 카드 — 빗금 오버레이 */
+.cell.hiding-marked::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: calc(var(--radius) - 4px);
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(180, 0, 0, 0.55) 0px,
+        rgba(180, 0, 0, 0.55) 4px,
+        transparent 4px,
+        transparent 12px
+    );
+    pointer-events: none;
+}
+
+/* 가림 모드 중 아직 가려지지 않은 카드 — 살짝 흐리게 */
+.hiding-mode-active .cell:not(.hiding-marked):not(.add-cell) {
+    opacity: 0.7;
+}
+
+/* 가림 모드 버튼 */
+#btn-hiding {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
 /* ---------- Grid ---------- */
 .grid {
     flex: 1;

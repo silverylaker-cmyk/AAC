@@ -26,6 +26,10 @@
             <div class="topbar-right">
                 <span id="voice-indicator" class="voice-indicator"></span>
                 <button id="btn-home-toggle" class="gear-btn" aria-label="홈 화면(카테고리만 보기)">🏠</button>
+                <button id="btn-hiding" class="gear-btn" aria-label="가림 모드 (길게 누르기)">
+                    🗑️
+                    <span class="gear-hold-ring" id="hiding-hold-ring" aria-hidden="true"></span>
+                </button>
                 <button id="btn-settings" class="gear-btn" aria-label="보호자 설정 (길게 누르기)">
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -41,6 +45,13 @@
         <div id="edit-banner" class="edit-banner" style="display:none;">
             <span>✏️ 편집 모드 — 카드를 눌러 수정하세요</span>
             <button id="btn-exit-edit" class="btn small-btn">편집 끝내기</button>
+        </div>
+
+        <!-- Hiding mode banner -->
+        <div id="hiding-banner" class="edit-banner hiding-banner" style="display:none;">
+            <span>🗑️ 가림 모드 — 카드를 눌러 가리거나 해제하세요</span>
+            <button id="btn-unhide-all" class="btn small-btn">가림 모두 해제</button>
+            <button id="btn-exit-hiding" class="btn small-btn">가림 끝내기</button>
         </div>
 
         <!-- Symbol grid -->

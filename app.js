@@ -177,6 +177,7 @@ const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
 let editMode = false;
 let homeMode = false;
+let hidingMode = false;
 let currentAudio = null;
 
 async function loadSettings() {
@@ -299,11 +300,28 @@ function onActivate(el, fn) {
 function renderGrid() {
     const grid = $('grid');
     grid.innerHTML = '';
+    grid.classList.toggle('hiding-mode-active', hidingMode);
     const list = cells.filter(c => c.boardId === activeBoardId).sort((a, b) => a.order - b.order);
 
     list.forEach((cell, idx) => {
         const div = document.createElement('div');
-        div.className = 'cell';
+        const isHidden = !!cell.hidden;
+
+        if (!hidingMode && isHidden) {
+            // 일반 모드: 가려진 카드는 회색 빈 칸
+            div.className = 'cell cell-hidden';
+            div.setAttribute('aria-hidden', 'true');
+            const imgBox = document.createElement('div');
+            imgBox.className = 'cell-image';
+            const label = document.createElement('div');
+            label.className = 'cell-label';
+            label.textContent = cell.label;
+            div.append(imgBox, label);
+            grid.appendChild(div);
+            return;
+        }
+
+        div.className = 'cell' + (hidingMode && isHidden ? ' hiding-marked' : '');
         div.style.setProperty('--cell-color', boardColor(cell.boardId));
 
         const imgBox = document.createElement('div');
@@ -347,6 +365,16 @@ function renderGrid() {
             const edit = () => openEditor(cell);
             div.addEventListener('click', edit);
             onActivate(div, edit);
+        } else if (hidingMode) {
+            div.setAttribute('aria-label', `${cell.label} ${isHidden ? '(가림 해제)' : '(가리기)'}`);
+            const toggle = async () => {
+                cell.hidden = !cell.hidden;
+                await dbPut('cells', cell);
+                cells = await dbGetAll('cells');
+                renderGrid();
+            };
+            div.addEventListener('click', toggle);
+            onActivate(div, toggle);
         } else {
             div.setAttribute('aria-label', cell.label);
             const speak = () => speakCell(cell, div);
@@ -365,7 +393,7 @@ function renderGrid() {
         grid.appendChild(div);
     });
 
-    if (list.length === 0 && !editMode) {
+    if (list.length === 0 && !editMode && !hidingMode) {
         const empty = document.createElement('div');
         empty.className = 'grid-empty';
         empty.textContent = '이 폴더에는 아직 카드가 없어요. 톱니바퀴를 길게 눌러 편집 모드에서 카드를 추가해 주세요.';
@@ -423,10 +451,12 @@ function renderHomeGrid() {
 
 function setHomeMode(on) {
     homeMode = on;
+    if (on && hidingMode) exitHidingMode();
     $('board-tabs').style.display = on ? 'none' : '';
     $('grid').style.display = on ? 'none' : '';
     $('home-grid').style.display = on ? 'grid' : 'none';
     $('edit-banner').style.display = (!on && editMode) ? 'flex' : 'none';
+    $('hiding-banner').style.display = (!on && hidingMode) ? 'flex' : 'none';
     $('btn-home-toggle').textContent = on ? '↩️' : '🏠';
     $('btn-home-toggle').setAttribute('aria-label', on ? '카드 화면으로 돌아가기' : '홈 화면(카테고리만 보기)');
     if (on) {
@@ -697,6 +727,54 @@ function checkGate() {
         $('gate-answer').placeholder = '다시 입력해 주세요';
         $('gate-answer').focus();
     }
+}
+
+// ===== 가림 모드 =====
+let hidingHoldTimer = null;
+
+function setupHidingMode() {
+    const btn = $('btn-hiding');
+    const ring = $('hiding-hold-ring');
+
+    const start = (e) => {
+        e.preventDefault();
+        btn.classList.add('holding');
+        hidingHoldTimer = setTimeout(() => {
+            btn.classList.remove('holding');
+            openGate(() => enterHidingMode());
+        }, 3000);
+    };
+    const cancel = () => {
+        btn.classList.remove('holding');
+        clearTimeout(hidingHoldTimer);
+    };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', cancel);
+    btn.addEventListener('pointerleave', cancel);
+    btn.addEventListener('pointercancel', cancel);
+
+    $('btn-exit-hiding').addEventListener('click', exitHidingMode);
+
+    $('btn-unhide-all').addEventListener('click', async () => {
+        if (!confirm('가려진 카드를 모두 해제할까요?')) return;
+        for (const c of cells) {
+            if (c.hidden) { c.hidden = false; await dbPut('cells', c); }
+        }
+        cells = await dbGetAll('cells');
+        renderGrid();
+    });
+}
+
+function enterHidingMode() {
+    hidingMode = true;
+    $('hiding-banner').style.display = 'flex';
+    renderGrid();
+}
+
+function exitHidingMode() {
+    hidingMode = false;
+    $('hiding-banner').style.display = 'none';
+    renderGrid();
 }
 
 // ===== Settings =====
@@ -1796,6 +1874,7 @@ async function init() {
     renderGrid();
     updateVoiceIndicator();
     setupGate();
+    setupHidingMode();
     setupSettings();
     setupBoardEditor();
     setupHomeToggle();
