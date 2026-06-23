@@ -22,6 +22,7 @@ const BOARD_COLOR_NAMES = {
 };
 
 const DEFAULT_BOARDS = [
+    { id: 'favorites', name: '즐겨찾기', color: '#ffd700', order: -1, emoji: '⭐', readonly: true },
     { id: 'core',   name: '핵심',  color: '#f2a7c3', order: 0, emoji: '🌟' },
     { id: 'people', name: '사람',  color: '#f5d76e', order: 1, emoji: '👥' },
     { id: 'food',   name: '음식',  color: '#f5a96e', order: 2, emoji: '🍎' },
@@ -215,6 +216,14 @@ async function backfillBoardEmojis() {
     if (changed) boards = await dbGetAll('boards');
 }
 
+// 즐겨찾기 폴더가 없는 기존 사용자에게 추가
+async function backfillFavoritesBoard() {
+    if (!boards.find(b => b.id === 'favorites')) {
+        await dbPut('boards', { id: 'favorites', name: '즐겨찾기', color: '#ffd700', order: -1, emoji: '⭐', readonly: true });
+        boards = await dbGetAll('boards');
+    }
+}
+
 // ===== Rendering =====
 const $ = (id) => document.getElementById(id);
 
@@ -301,7 +310,10 @@ function renderGrid() {
     const grid = $('grid');
     grid.innerHTML = '';
     grid.classList.toggle('hiding-mode-active', hidingMode);
-    const list = cells.filter(c => c.boardId === activeBoardId).sort((a, b) => a.order - b.order);
+    const isFavorites = activeBoardId === 'favorites';
+    const list = isFavorites
+        ? cells.filter(c => !!c.favorite).sort((a, b) => a.order - b.order)
+        : cells.filter(c => c.boardId === activeBoardId).sort((a, b) => a.order - b.order);
 
     list.forEach((cell, idx) => {
         const div = document.createElement('div');
@@ -344,29 +356,44 @@ function renderGrid() {
             badge.textContent = '✏️';
             div.appendChild(badge);
 
-            const orderCtl = document.createElement('div');
-            orderCtl.className = 'cell-order';
-            const up = document.createElement('button');
-            up.className = 'ord-btn';
-            up.textContent = '↑';
-            up.setAttribute('aria-label', '앞으로 이동');
-            up.disabled = idx === 0;
-            up.addEventListener('click', (e) => { e.stopPropagation(); moveCell(cell, -1); });
-            const down = document.createElement('button');
-            down.className = 'ord-btn';
-            down.textContent = '↓';
-            down.setAttribute('aria-label', '뒤로 이동');
-            down.disabled = idx === list.length - 1;
-            down.addEventListener('click', (e) => { e.stopPropagation(); moveCell(cell, 1); });
-            orderCtl.append(up, down);
-            div.appendChild(orderCtl);
+            if (!isFavorites) {
+                const orderCtl = document.createElement('div');
+                orderCtl.className = 'cell-order';
+                const up = document.createElement('button');
+                up.className = 'ord-btn';
+                up.textContent = '↑';
+                up.setAttribute('aria-label', '앞으로 이동');
+                up.disabled = idx === 0;
+                up.addEventListener('click', (e) => { e.stopPropagation(); moveCell(cell, -1); });
+                const down = document.createElement('button');
+                down.className = 'ord-btn';
+                down.textContent = '↓';
+                down.setAttribute('aria-label', '뒤로 이동');
+                down.disabled = idx === list.length - 1;
+                down.addEventListener('click', (e) => { e.stopPropagation(); moveCell(cell, 1); });
+                orderCtl.append(up, down);
+                div.appendChild(orderCtl);
+            }
+
+            const starBtn = document.createElement('button');
+            starBtn.className = 'fav-btn';
+            starBtn.textContent = cell.favorite ? '⭐' : '☆';
+            starBtn.setAttribute('aria-label', cell.favorite ? '즐겨찾기 해제' : '즐겨찾기에 추가');
+            starBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                cell.favorite = !cell.favorite;
+                await dbPut('cells', cell);
+                cells = await dbGetAll('cells');
+                renderGrid();
+            });
+            div.appendChild(starBtn);
 
             div.setAttribute('aria-label', `${cell.label} 카드 편집`);
             const edit = () => openEditor(cell);
             div.addEventListener('click', edit);
             onActivate(div, edit);
         } else if (hidingMode) {
-            div.setAttribute('aria-label', `${cell.label} ${isHidden ? '(가림 해제)' : '(가리기)'}`);
+            div.setAttribute('aria-label', `${cell.label} ${isHidden ? '(숨김 해제)' : '(숨기기)'}`);
             const toggle = async () => {
                 cell.hidden = !cell.hidden;
                 await dbPut('cells', cell);
@@ -396,11 +423,13 @@ function renderGrid() {
     if (list.length === 0 && !editMode && !hidingMode) {
         const empty = document.createElement('div');
         empty.className = 'grid-empty';
-        empty.textContent = '이 폴더에는 아직 카드가 없어요. 톱니바퀴를 길게 눌러 편집 모드에서 카드를 추가해 주세요.';
+        empty.textContent = isFavorites
+            ? '즐겨찾기한 카드가 없어요. 편집 모드에서 카드의 ☆을 눌러 추가해 보세요.'
+            : '이 폴더에는 아직 카드가 없어요. 톱니바퀴를 길게 눌러 편집 모드에서 카드를 추가해 주세요.';
         grid.appendChild(empty);
     }
 
-    if (editMode) {
+    if (editMode && !isFavorites) {
         const add = document.createElement('div');
         add.className = 'cell add-cell';
         add.textContent = '+';
@@ -729,7 +758,7 @@ function checkGate() {
     }
 }
 
-// ===== 가림 모드 =====
+// ===== 숨김 모드 =====
 let hidingHoldTimer = null;
 
 function setupHidingMode() {
@@ -980,27 +1009,33 @@ function renderBoardManager() {
 
         const name = document.createElement('span');
         name.className = 'bname';
-        const count = cells.filter(c => c.boardId === b.id).length;
+        const count = b.id === 'favorites'
+            ? cells.filter(c => !!c.favorite).length
+            : cells.filter(c => c.boardId === b.id).length;
         name.textContent = `${b.name} (${count})`;
 
-        const up = document.createElement('button');
-        up.className = 'iconbtn';
-        up.textContent = '↑';
-        up.disabled = idx === 0;
-        up.addEventListener('click', () => moveBoard(b, -1));
+        row.append(dot, name);
 
-        const down = document.createElement('button');
-        down.className = 'iconbtn';
-        down.textContent = '↓';
-        down.disabled = idx === sorted.length - 1;
-        down.addEventListener('click', () => moveBoard(b, 1));
+        if (!b.readonly) {
+            const up = document.createElement('button');
+            up.className = 'iconbtn';
+            up.textContent = '↑';
+            up.disabled = idx === 0;
+            up.addEventListener('click', () => moveBoard(b, -1));
 
-        const edit = document.createElement('button');
-        edit.className = 'iconbtn';
-        edit.textContent = '✏️';
-        edit.addEventListener('click', () => openBoardEditor(b));
+            const down = document.createElement('button');
+            down.className = 'iconbtn';
+            down.textContent = '↓';
+            down.disabled = idx === sorted.length - 1;
+            down.addEventListener('click', () => moveBoard(b, 1));
 
-        row.append(dot, name, up, down, edit);
+            const edit = document.createElement('button');
+            edit.className = 'iconbtn';
+            edit.textContent = '✏️';
+            edit.addEventListener('click', () => openBoardEditor(b));
+
+            row.append(up, down, edit);
+        }
         wrap.appendChild(row);
     });
 }
@@ -1021,6 +1056,7 @@ async function moveBoard(board, dir) {
 }
 
 function openBoardEditor(board) {
+    if (board && board.readonly) return;
     editingBoard = board;
     pickerTarget = 'board';
     pendingBoardColor = board ? board.color : BOARD_COLORS[0];
@@ -1862,6 +1898,7 @@ async function init() {
     await loadSettings();
     await seedIfEmpty();
     await backfillBoardEmojis();
+    await backfillFavoritesBoard();
     // 활성 폴더가 실제로 존재하는지 확인 — 없으면 첫 폴더로 맞춘다.
     // (예: 'core' 폴더가 없는 백업을 가져온 뒤 다시 열면 빈 화면이 뜨던 문제 방지)
     if (!boards.some(b => b.id === activeBoardId)) {

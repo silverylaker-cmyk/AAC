@@ -194,13 +194,13 @@ body {
     flex-shrink: 0;
 }
 
-/* 가림 모드 배너 */
+/* 숨김 모드 배너 */
 .hiding-banner {
     background: #ffe0e0;
     color: #8b0000;
 }
 
-/* 가림 처리된 카드 — 일반 화면에서 회색 빈 칸 */
+/* 숨김 처리된 카드 — 일반 화면에서 회색 빈 칸 */
 .cell.cell-hidden {
     background: #e8e4e0;
     border-color: #ccc;
@@ -214,7 +214,7 @@ body {
     visibility: hidden;
 }
 
-/* 가림 모드 중 가려진 카드 — 빗금 오버레이 */
+/* 숨김 모드 중 숨겨진 카드 — 빗금 오버레이 */
 .cell.hiding-marked::after {
     content: '';
     position: absolute;
@@ -230,12 +230,12 @@ body {
     pointer-events: none;
 }
 
-/* 가림 모드 중 아직 가려지지 않은 카드 — 살짝 흐리게 */
+/* 숨김 모드 중 아직 숨겨지지 않은 카드 — 살짝 흐리게 */
 .hiding-mode-active .cell:not(.hiding-marked):not(.add-cell) {
     opacity: 0.7;
 }
 
-/* 가림 모드 버튼 */
+/* 숨김 모드 버튼 */
 #btn-hiding {
     font-size: 1.4rem;
     line-height: 1;
@@ -427,6 +427,22 @@ button:focus-visible {
     opacity: 0.35;
     cursor: default;
     box-shadow: none;
+}
+
+.cell .fav-btn {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    font-size: 1.15rem;
+    line-height: 1;
+    padding: 3px 6px;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: var(--shadow);
+    touch-action: manipulation;
 }
 
 .cell.add-cell {
