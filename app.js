@@ -440,9 +440,11 @@ function renderGrid() {
                 startY = e.clientY;
                 dragHideActive = false;
                 if (settings.dragToHide) {
-                    div.setPointerCapture(e.pointerId);
+                    const pointerId = e.pointerId;
                     dragHideTimer = setTimeout(() => {
                         dragHideActive = true;
+                        try { div.setPointerCapture(pointerId); } catch {}
+                        div.style.touchAction = 'none';
                         div.classList.add('drag-to-hide-lift');
                         $('btn-hiding').classList.add('drag-target');
                     }, 2000);
@@ -458,15 +460,17 @@ function renderGrid() {
                     }
                 }
                 if (dragHideActive) {
+                    e.preventDefault();
                     const r = $('btn-hiding').getBoundingClientRect();
                     const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
                     $('btn-hiding').classList.toggle('drag-over', over);
                 }
-            });
+            }, { passive: false });
 
             div.addEventListener('pointerup', (e) => {
                 clearTimeout(dragHideTimer);
                 dragHideTimer = null;
+                div.style.touchAction = '';
                 $('btn-hiding').classList.remove('drag-target', 'drag-over');
                 div.classList.remove('drag-to-hide-lift');
                 if (dragHideActive) {
@@ -492,6 +496,7 @@ function renderGrid() {
                 clearTimeout(dragHideTimer);
                 dragHideTimer = null;
                 dragHideActive = false;
+                div.style.touchAction = '';
                 div.classList.remove('drag-to-hide-lift');
                 $('btn-hiding').classList.remove('drag-target', 'drag-over');
             });
