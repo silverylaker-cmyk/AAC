@@ -22,7 +22,7 @@ const BOARD_COLOR_NAMES = {
 };
 
 const DEFAULT_BOARDS = [
-    { id: 'favorites', name: '즐겨찾기', color: '#ffd700', order: -1, emoji: '⭐', readonly: true },
+    { id: 'favorites', name: '즐겨찾기', color: '#5b9bd5', order: -1, emoji: '⭐', readonly: true },
     { id: 'core',   name: '핵심',  color: '#f2a7c3', order: 0, emoji: '🌟' },
     { id: 'people', name: '사람',  color: '#f5d76e', order: 1, emoji: '👥' },
     { id: 'food',   name: '음식',  color: '#f5a96e', order: 2, emoji: '🍎' },
@@ -172,7 +172,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, arasaacRecent: [], lastBackupAt: 0 };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, dragToHide: false, inCardDragAsClick: true, arasaacRecent: [], lastBackupAt: 0 };
 
 const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
@@ -216,10 +216,15 @@ async function backfillBoardEmojis() {
     if (changed) boards = await dbGetAll('boards');
 }
 
-// 즐겨찾기 폴더가 없는 기존 사용자에게 추가
+// 즐겨찾기 폴더가 없는 기존 사용자에게 추가, 색상도 최신값으로 유지
 async function backfillFavoritesBoard() {
-    if (!boards.find(b => b.id === 'favorites')) {
-        await dbPut('boards', { id: 'favorites', name: '즐겨찾기', color: '#ffd700', order: -1, emoji: '⭐', readonly: true });
+    const existing = boards.find(b => b.id === 'favorites');
+    if (!existing) {
+        await dbPut('boards', { id: 'favorites', name: '즐겨찾기', color: '#5b9bd5', order: -1, emoji: '⭐', readonly: true });
+        boards = await dbGetAll('boards');
+    } else if (existing.color === '#ffd700') {
+        existing.color = '#5b9bd5';
+        await dbPut('boards', existing);
         boards = await dbGetAll('boards');
     }
 }
@@ -312,7 +317,7 @@ function renderGrid() {
     grid.classList.toggle('hiding-mode-active', hidingMode);
     const isFavorites = activeBoardId === 'favorites';
     const list = isFavorites
-        ? cells.filter(c => !!c.favorite).sort((a, b) => a.order - b.order)
+        ? cells.filter(c => !!c.favorite).sort((a, b) => (a.favoriteOrder ?? 0) - (b.favoriteOrder ?? 0))
         : cells.filter(c => c.boardId === activeBoardId).sort((a, b) => a.order - b.order);
 
     list.forEach((cell, idx) => {
@@ -375,6 +380,25 @@ function renderGrid() {
                 div.appendChild(orderCtl);
             }
 
+            if (isFavorites) {
+                const orderCtl = document.createElement('div');
+                orderCtl.className = 'cell-order';
+                const up = document.createElement('button');
+                up.className = 'ord-btn';
+                up.textContent = '↑';
+                up.setAttribute('aria-label', '앞으로 이동');
+                up.disabled = idx === 0;
+                up.addEventListener('click', (e) => { e.stopPropagation(); moveFavoriteCell(cell, -1); });
+                const down = document.createElement('button');
+                down.className = 'ord-btn';
+                down.textContent = '↓';
+                down.setAttribute('aria-label', '뒤로 이동');
+                down.disabled = idx === list.length - 1;
+                down.addEventListener('click', (e) => { e.stopPropagation(); moveFavoriteCell(cell, 1); });
+                orderCtl.append(up, down);
+                div.appendChild(orderCtl);
+            }
+
             const starBtn = document.createElement('button');
             starBtn.className = 'fav-btn';
             starBtn.textContent = cell.favorite ? '⭐' : '☆';
@@ -382,6 +406,10 @@ function renderGrid() {
             starBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 cell.favorite = !cell.favorite;
+                if (cell.favorite) {
+                    const maxOrd = Math.max(-1, ...cells.filter(c => c.favorite && c.id !== cell.id).map(c => c.favoriteOrder ?? 0));
+                    cell.favoriteOrder = maxOrd + 1;
+                }
                 await dbPut('cells', cell);
                 cells = await dbGetAll('cells');
                 renderGrid();
@@ -405,16 +433,69 @@ function renderGrid() {
         } else {
             div.setAttribute('aria-label', cell.label);
             const speak = () => speakCell(cell, div);
-            let startX, startY;
+            let startX, startY, dragHideTimer = null, dragHideActive = false;
+
             div.addEventListener('pointerdown', (e) => {
                 startX = e.clientX;
                 startY = e.clientY;
+                dragHideActive = false;
+                if (settings.dragToHide) {
+                    div.setPointerCapture(e.pointerId);
+                    dragHideTimer = setTimeout(() => {
+                        dragHideActive = true;
+                        div.classList.add('drag-to-hide-lift');
+                        $('btn-hiding').classList.add('drag-target');
+                    }, 2000);
+                }
             });
+
+            div.addEventListener('pointermove', (e) => {
+                if (dragHideTimer && !dragHideActive) {
+                    const d = Math.sqrt((e.clientX - startX) ** 2 + (e.clientY - startY) ** 2);
+                    if (d > 15) {
+                        clearTimeout(dragHideTimer);
+                        dragHideTimer = null;
+                    }
+                }
+                if (dragHideActive) {
+                    const r = $('btn-hiding').getBoundingClientRect();
+                    const over = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                    $('btn-hiding').classList.toggle('drag-over', over);
+                }
+            });
+
             div.addEventListener('pointerup', (e) => {
+                clearTimeout(dragHideTimer);
+                dragHideTimer = null;
+                $('btn-hiding').classList.remove('drag-target', 'drag-over');
+                div.classList.remove('drag-to-hide-lift');
+                if (dragHideActive) {
+                    dragHideActive = false;
+                    const r = $('btn-hiding').getBoundingClientRect();
+                    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+                        cell.hidden = true;
+                        dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
+                    }
+                    return;
+                }
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
-                if (Math.sqrt(dx * dx + dy * dy) < 120) speak();
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120) { speak(); return; }
+                if (settings.inCardDragAsClick) {
+                    const rect = div.getBoundingClientRect();
+                    if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) speak();
+                }
             });
+
+            div.addEventListener('pointercancel', () => {
+                clearTimeout(dragHideTimer);
+                dragHideTimer = null;
+                dragHideActive = false;
+                div.classList.remove('drag-to-hide-lift');
+                $('btn-hiding').classList.remove('drag-target', 'drag-over');
+            });
+
             onActivate(div, speak);
         }
         grid.appendChild(div);
@@ -568,6 +649,19 @@ async function moveCell(cell, dir) {
     if (j < 0 || j >= list.length) return;
     const a = list[i], b = list[j];
     const tmp = a.order; a.order = b.order; b.order = tmp;
+    await dbPut('cells', a);
+    await dbPut('cells', b);
+    cells = await dbGetAll('cells');
+    renderGrid();
+}
+
+async function moveFavoriteCell(cell, dir) {
+    const list = cells.filter(c => !!c.favorite).sort((a, b) => (a.favoriteOrder ?? 0) - (b.favoriteOrder ?? 0));
+    const i = list.findIndex(c => c.id === cell.id);
+    const j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    const a = list[i], b = list[j];
+    const tmp = a.favoriteOrder ?? 0; a.favoriteOrder = b.favoriteOrder ?? 0; b.favoriteOrder = tmp;
     await dbPut('cells', a);
     await dbPut('cells', b);
     cells = await dbGetAll('cells');
@@ -820,6 +914,8 @@ function openSettings() {
     $('opt-animations').checked = !!settings.animations;
     $('opt-reward-sound').checked = !!settings.rewardSound;
     $('opt-cancel-on-touch').checked = settings.cancelOnTouch !== false;
+    $('opt-drag-to-hide').checked = !!settings.dragToHide;
+    $('opt-in-card-drag').checked = settings.inCardDragAsClick !== false;
     renderLabelSizeButtons();
     renderBoardManager();
     renderUsageStats();
@@ -926,6 +1022,12 @@ function setupSettings() {
     });
     $('opt-cancel-on-touch').addEventListener('change', (e) => {
         saveSetting('cancelOnTouch', e.target.checked);
+    });
+    $('opt-drag-to-hide').addEventListener('change', (e) => {
+        saveSetting('dragToHide', e.target.checked);
+    });
+    $('opt-in-card-drag').addEventListener('change', (e) => {
+        saveSetting('inCardDragAsClick', e.target.checked);
     });
 
     $('btn-add-board').addEventListener('click', () => openBoardEditor(null));

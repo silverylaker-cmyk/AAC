@@ -241,6 +241,30 @@ body {
     line-height: 1;
 }
 
+/* 드래그-숨기기: 2초 누른 후 카드가 들린 상태 */
+.cell.drag-to-hide-lift {
+    opacity: 0.65;
+    transform: scale(0.93);
+    transition: transform 0.15s, opacity 0.15s;
+}
+
+/* 드래그-숨기기: 휴지통 버튼이 드롭 대상으로 활성화된 상태 */
+#btn-hiding.drag-target {
+    animation: pulse-trash 0.7s ease-in-out infinite alternate;
+}
+
+#btn-hiding.drag-over {
+    background: rgba(180, 0, 0, 0.2);
+    animation: none;
+    transform: scale(1.2);
+    transition: transform 0.1s;
+}
+
+@keyframes pulse-trash {
+    from { transform: scale(1); }
+    to   { transform: scale(1.25); }
+}
+
 /* ---------- Grid ---------- */
 .grid {
     flex: 1;
