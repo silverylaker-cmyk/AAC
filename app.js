@@ -433,12 +433,13 @@ function renderGrid() {
         } else {
             div.setAttribute('aria-label', cell.label);
             const speak = () => speakCell(cell, div);
-            let startX, startY, dragHideTimer = null, dragHideActive = false;
+            let startX, startY, lastTX, lastTY, dragHideTimer = null, dragHideActive = false, pointerUpFired = false;
 
             div.addEventListener('pointerdown', (e) => {
-                startX = e.clientX;
-                startY = e.clientY;
+                startX = e.clientX;  startY = e.clientY;
+                lastTX = e.clientX;  lastTY = e.clientY;
                 dragHideActive = false;
+                pointerUpFired = false;
                 if (settings.dragToHide) {
                     const pointerId = e.pointerId;
                     dragHideTimer = setTimeout(() => {
@@ -468,49 +469,59 @@ function renderGrid() {
             div.addEventListener('pointermove', (e) => {
                 if (dragHideTimer && !dragHideActive) {
                     const d = Math.sqrt((e.clientX - startX) ** 2 + (e.clientY - startY) ** 2);
-                    if (d > 15) {
-                        clearTimeout(dragHideTimer);
-                        dragHideTimer = null;
-                    }
+                    if (d > 15) { clearTimeout(dragHideTimer); dragHideTimer = null; }
                 }
                 if (dragHideActive) {
                     $('btn-hiding').classList.toggle('drag-over', overTrash(e.clientX, e.clientY));
                 }
             });
 
-            // 터치 스크롤을 실제로 막는 유일한 방법: non-passive touchmove + preventDefault.
-            // (pointermove의 preventDefault나 도중에 바꾸는 touch-action은 진행 중인 제스처를 막지 못함)
-            // 터치 이벤트는 시작 요소(div)에 자동으로 고정되므로 손가락이 휴지통으로 가도 계속 발생한다.
+            // dragToHide 드래그 중 스크롤 차단 (non-passive 필수)
             div.addEventListener('touchmove', (e) => {
-                if (dragHideTimer && !dragHideActive && e.touches[0]) {
-                    const t = e.touches[0];
+                const t = e.touches[0];
+                if (t) { lastTX = t.clientX; lastTY = t.clientY; }
+                if (dragHideTimer && !dragHideActive && t) {
                     const d = Math.sqrt((t.clientX - startX) ** 2 + (t.clientY - startY) ** 2);
                     if (d > 15) { clearTimeout(dragHideTimer); dragHideTimer = null; }
                 }
                 if (dragHideActive) {
-                    e.preventDefault(); // 스크롤 차단 → pointercancel 방지
-                    const t = e.touches[0];
+                    e.preventDefault();
                     if (t) $('btn-hiding').classList.toggle('drag-over', overTrash(t.clientX, t.clientY));
                 }
             }, { passive: false });
 
-            // 터치 드롭 처리 (pointerup보다 신뢰성 높음 — 터치 고정 덕분)
+            // touchend: 드래그-숨기기 드롭 + inCardDragAsClick.
+            // 드래그 중엔 pointercancel이 발생해 pointerup이 오지 않으므로 touchend가 처리한다.
+            // changedTouches[0]이 없을 때(일부 환경)는 touchmove에서 추적한 lastTX/Y를 사용한다.
             div.addEventListener('touchend', (e) => {
-                if (!dragHideActive) return;
-                dragHideActive = false;
-                clearTimeout(dragHideTimer);
-                dragHideTimer = null;
-                const t = e.changedTouches[0];
-                const onTrash = t && overTrash(t.clientX, t.clientY);
-                endDragVisuals();
-                if (onTrash) { e.preventDefault(); dropOnTrash(); }
+                const tc = e.changedTouches[0];
+                const endX = tc ? tc.clientX : lastTX;
+                const endY = tc ? tc.clientY : lastTY;
+                if (dragHideActive) {
+                    dragHideActive = false;
+                    clearTimeout(dragHideTimer);
+                    dragHideTimer = null;
+                    const onTrash = overTrash(endX, endY);
+                    endDragVisuals();
+                    if (onTrash) { e.preventDefault(); dropOnTrash(); }
+                    return;
+                }
+                // 탭은 pointerup이 이미 처리했으므로 이중 발화 방지
+                if (pointerUpFired) return;
+                if (settings.inCardDragAsClick) {
+                    const dx = endX - startX;
+                    const dy = endY - startY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const halfH = div.getBoundingClientRect().height / 2;
+                    if (dist < halfH) speak();
+                }
             });
 
             div.addEventListener('pointerup', (e) => {
                 clearTimeout(dragHideTimer);
                 dragHideTimer = null;
                 if (dragHideActive) {
-                    // 마우스 등 비터치 입력의 드롭 처리 (터치는 touchend가 담당)
+                    // 마우스·스타일러스 드롭 처리 (터치는 touchend가 담당)
                     dragHideActive = false;
                     const onTrash = overTrash(e.clientX, e.clientY);
                     endDragVisuals();
@@ -518,20 +529,20 @@ function renderGrid() {
                     return;
                 }
                 endDragVisuals();
+                pointerUpFired = true;
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < 120) { speak(); return; }
                 if (settings.inCardDragAsClick) {
-                    const rect = div.getBoundingClientRect();
-                    if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) speak();
+                    const halfH = div.getBoundingClientRect().height / 2;
+                    if (dist < halfH) speak();
                 }
             });
 
             div.addEventListener('pointercancel', () => {
                 clearTimeout(dragHideTimer);
                 dragHideTimer = null;
-                // 터치 드래그 중 pointercancel이 와도 dragHideActive는 유지 — touchend가 드롭을 처리한다.
                 if (!dragHideActive) endDragVisuals();
             });
 
