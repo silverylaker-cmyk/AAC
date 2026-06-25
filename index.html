@@ -41,24 +41,26 @@
             </div>
         </header>
 
-        <!-- Edit mode banner -->
-        <div id="edit-banner" class="edit-banner" style="display:none;">
-            <span>✏️ 편집 모드 — 카드를 눌러 수정하세요</span>
-            <button id="btn-exit-edit" class="btn small-btn">편집 끝내기</button>
+        <div class="app-main">
+            <!-- Edit mode banner -->
+            <div id="edit-banner" class="edit-banner" style="display:none;">
+                <span>✏️ 편집 모드 — 카드를 눌러 수정하세요</span>
+                <button id="btn-exit-edit" class="btn small-btn">편집 끝내기</button>
+            </div>
+
+            <!-- Hiding mode banner -->
+            <div id="hiding-banner" class="edit-banner hiding-banner" style="display:none;">
+                <span>🙈 숨김 모드 — 카드를 눌러 숨기거나 해제하세요</span>
+                <button id="btn-unhide-all" class="btn small-btn">숨김 모두 해제</button>
+                <button id="btn-exit-hiding" class="btn small-btn">숨김 끝내기</button>
+            </div>
+
+            <!-- Symbol grid -->
+            <main class="grid" id="grid"></main>
+
+            <!-- Home screen: 카테고리(폴더)만 큰 아이콘으로 보여주는 화면 -->
+            <main class="grid" id="home-grid" style="display:none;"></main>
         </div>
-
-        <!-- Hiding mode banner -->
-        <div id="hiding-banner" class="edit-banner hiding-banner" style="display:none;">
-            <span>🙈 숨김 모드 — 카드를 눌러 숨기거나 해제하세요</span>
-            <button id="btn-unhide-all" class="btn small-btn">숨김 모두 해제</button>
-            <button id="btn-exit-hiding" class="btn small-btn">숨김 끝내기</button>
-        </div>
-
-        <!-- Symbol grid -->
-        <main class="grid" id="grid"></main>
-
-        <!-- Home screen: 카테고리(폴더)만 큰 아이콘으로 보여주는 화면 -->
-        <main class="grid" id="home-grid" style="display:none;"></main>
     </div>
 
     <!-- Big feedback overlay (shown while speaking) -->
@@ -158,6 +160,18 @@
                     <input type="checkbox" id="opt-drag-to-hide">
                     <span>드래그로 카드 숨기기 (카드를 2초 누른 후 🗑️로 끌면 숨김 처리)</span>
                 </label>
+            </section>
+
+            <section class="settings-section">
+                <h3>📐 카테고리 탭</h3>
+                <label class="field-label" for="tab-scale">아이콘 크기 (0.5배 ~ 1배)</label>
+                <input type="range" id="tab-scale" min="0.5" max="1" step="0.05" aria-label="카테고리 아이콘 크기">
+                <span id="tab-scale-value"></span>
+                <label class="field-label">표시 위치</label>
+                <div class="segmented" id="tab-position">
+                    <button type="button" data-pos="top">상단</button>
+                    <button type="button" data-pos="left">좌측</button>
+                </div>
             </section>
 
             <section class="settings-section">

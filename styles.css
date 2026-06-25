@@ -10,6 +10,7 @@
     --cell-base: 150px;
     --cell-scale: 1;
     --label-scale: 1;
+    --tab-scale: 1;
 }
 
 * {
@@ -71,11 +72,11 @@ body {
     flex-shrink: 0;
     display: flex;
     align-items: stretch;
-    height: 120px;
-    width: 144px;
+    height: calc(120px * var(--tab-scale));
+    width: calc(144px * var(--tab-scale));
     padding: 0;
     border: 3px solid transparent;
-    border-radius: 18px;
+    border-radius: calc(18px * var(--tab-scale));
     color: var(--text);
     background: #eee;
     cursor: pointer;
@@ -90,7 +91,7 @@ body {
 
 .board-tab-icon {
     position: relative;
-    width: 120px;
+    width: calc(120px * var(--tab-scale));
     height: 100%;
     flex-shrink: 0;
     display: flex;
@@ -110,7 +111,7 @@ body {
 }
 
 .board-tab-icon .emoji {
-    font-size: 62px;
+    font-size: calc(62px * var(--tab-scale));
     line-height: 1;
 }
 
@@ -121,7 +122,7 @@ body {
     justify-content: center;
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    font-size: 0.78rem;
+    font-size: calc(0.78rem * var(--tab-scale));
     font-weight: 700;
     line-height: 1.15;
     padding: 4px 1px;
@@ -179,6 +180,58 @@ body {
 @keyframes holdPulse {
     from { opacity: 0.2; transform: scale(0.9); }
     to { opacity: 1; transform: scale(1.05); }
+}
+
+/* ---------- App main content area ---------- */
+.app-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+/* ---------- Left sidebar mode ---------- */
+html.tabs-left .app {
+    flex-direction: row;
+}
+
+html.tabs-left .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    width: calc(148px * var(--tab-scale));
+    height: 100%;
+    flex-shrink: 0;
+    padding: 4px;
+    gap: 4px;
+}
+
+html.tabs-left .topbar-right {
+    order: -1;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    padding: 2px 0;
+}
+
+html.tabs-left .topbar .voice-indicator {
+    display: none;
+}
+
+html.tabs-left .board-tabs {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1;
+    align-items: stretch;
+    padding: 0;
+    gap: 4px;
+}
+
+html.tabs-left .board-tab {
+    width: 100%;
+    flex-shrink: 0;
 }
 
 /* ---------- Edit banner ---------- */

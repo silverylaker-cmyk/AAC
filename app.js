@@ -172,7 +172,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, dragToHide: false, inCardDragAsClick: true, arasaacRecent: [], lastBackupAt: 0 };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, dragToHide: false, inCardDragAsClick: true, tabScale: 1, tabPosition: 'top', arasaacRecent: [], lastBackupAt: 0 };
 
 const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
@@ -664,9 +664,25 @@ function renderLabelSizeButtons() {
     });
 }
 
+function renderTabPositionButtons() {
+    const pos = settings.tabPosition || 'top';
+    document.querySelectorAll('#tab-position button').forEach(b => {
+        b.classList.toggle('selected', b.dataset.pos === pos);
+        b.setAttribute('aria-pressed', b.dataset.pos === pos ? 'true' : 'false');
+    });
+}
+
 function applyAnimSetting() {
     // 기본 OFF: 애니메이션을 끄면 reduce-motion 클래스로 카드/오버레이 움직임을 제거
     document.documentElement.classList.toggle('reduce-motion', !settings.animations);
+}
+
+function applyTabScale() {
+    document.documentElement.style.setProperty('--tab-scale', settings.tabScale || 1);
+}
+
+function applyTabPosition() {
+    document.documentElement.classList.toggle('tabs-left', settings.tabPosition === 'left');
 }
 
 // 보상 효과음: 말하기 후 짧고 부드러운 2음 차임 (설정으로 켤 때만)
@@ -966,7 +982,11 @@ function openSettings() {
     $('opt-cancel-on-touch').checked = settings.cancelOnTouch !== false;
     $('opt-drag-to-hide').checked = !!settings.dragToHide;
     $('opt-in-card-drag').checked = settings.inCardDragAsClick !== false;
+    $('tab-scale').value = settings.tabScale || 1;
+    $('tab-scale-value').textContent = `${Number(settings.tabScale || 1).toFixed(2)}배`;
+    $('tab-scale').setAttribute('aria-valuetext', `${Number(settings.tabScale || 1).toFixed(2)}배`);
     renderLabelSizeButtons();
+    renderTabPositionButtons();
     renderBoardManager();
     renderUsageStats();
     checkKoreanVoice();
@@ -1078,6 +1098,22 @@ function setupSettings() {
     });
     $('opt-in-card-drag').addEventListener('change', (e) => {
         saveSetting('inCardDragAsClick', e.target.checked);
+    });
+
+    $('tab-scale').addEventListener('input', () => {
+        const v = parseFloat($('tab-scale').value);
+        saveSetting('tabScale', v);
+        $('tab-scale-value').textContent = `${v.toFixed(2)}배`;
+        $('tab-scale').setAttribute('aria-valuetext', `${v.toFixed(2)}배`);
+        applyTabScale();
+    });
+
+    document.querySelectorAll('#tab-position button').forEach(b => {
+        b.addEventListener('click', () => {
+            saveSetting('tabPosition', b.dataset.pos);
+            applyTabPosition();
+            renderTabPositionButtons();
+        });
     });
 
     $('btn-add-board').addEventListener('click', () => openBoardEditor(null));
@@ -2059,6 +2095,8 @@ async function init() {
     applyCardScale();
     applyLabelSize();
     applyAnimSetting();
+    applyTabScale();
+    applyTabPosition();
     renderTabs();
     renderGrid();
     updateVoiceIndicator();
