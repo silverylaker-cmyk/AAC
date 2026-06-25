@@ -512,8 +512,8 @@ function renderGrid() {
                     const dx = endX - startX;
                     const dy = endY - startY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    const halfH = div.getBoundingClientRect().height / 2;
-                    if (dist < halfH) speak();
+                    const threshold = div.getBoundingClientRect().height * 0.35;
+                    if (dist < threshold) speak();
                 }
             });
 
@@ -535,8 +535,8 @@ function renderGrid() {
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < 120) { speak(); return; }
                 if (settings.inCardDragAsClick) {
-                    const halfH = div.getBoundingClientRect().height / 2;
-                    if (dist < halfH) speak();
+                    const threshold = div.getBoundingClientRect().height * 0.35;
+                    if (dist < threshold) speak();
                 }
             });
 
