@@ -466,7 +466,6 @@ function renderGrid() {
                 dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
             };
             const dropOnFavorite = () => {
-                if (cell.favorite) return;
                 const favCells = cells.filter(c => !!c.favorite);
                 const minOrd = favCells.length > 0 ? Math.min(...favCells.map(c => c.favoriteOrder ?? 0)) : 0;
                 cell.favorite = true;
