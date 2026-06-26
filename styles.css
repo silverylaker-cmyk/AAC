@@ -318,6 +318,24 @@ html.tabs-left .board-tab {
     to   { transform: scale(1.25); }
 }
 
+/* 드래그-즐겨찾기: 카테고리 탭 영역이 드롭 대상으로 활성화된 상태 */
+#board-tabs.drag-target {
+    animation: pulse-fav 0.7s ease-in-out infinite alternate;
+    border-radius: 12px;
+}
+
+#board-tabs.drag-over {
+    background: rgba(91, 141, 239, 0.22);
+    animation: none;
+    border-radius: 12px;
+    transition: background 0.1s;
+}
+
+@keyframes pulse-fav {
+    from { background: transparent; }
+    to   { background: rgba(91, 141, 239, 0.18); }
+}
+
 /* ---------- Grid ---------- */
 .grid {
     flex: 1;

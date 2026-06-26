@@ -172,7 +172,7 @@ const dbClear = (store) => tx(store, 'readwrite', s => s.clear());
 // ===== App state =====
 let boards = [];
 let cells = [];
-let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, dragToHide: false, inCardDragAsClick: true, tabScale: 1, tabPosition: 'top', arasaacRecent: [], lastBackupAt: 0 };
+let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', animations: false, rewardSound: false, cancelOnTouch: true, dragToHide: false, dragToFavorite: false, inCardDragAsClick: true, tabScale: 1, tabPosition: 'top', arasaacRecent: [], lastBackupAt: 0 };
 
 const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
@@ -433,21 +433,22 @@ function renderGrid() {
         } else {
             div.setAttribute('aria-label', cell.label);
             const speak = () => speakCell(cell, div);
-            let startX, startY, lastTX, lastTY, dragHideTimer = null, dragHideActive = false, pointerUpFired = false;
+            let startX, startY, lastTX, lastTY, dragTimer = null, dragActive = false, pointerUpFired = false;
 
             div.addEventListener('pointerdown', (e) => {
                 startX = e.clientX;  startY = e.clientY;
                 lastTX = e.clientX;  lastTY = e.clientY;
-                dragHideActive = false;
+                dragActive = false;
                 pointerUpFired = false;
-                if (settings.dragToHide) {
+                if (settings.dragToHide || settings.dragToFavorite) {
                     const pointerId = e.pointerId;
-                    dragHideTimer = setTimeout(() => {
-                        dragHideActive = true;
+                    dragTimer = setTimeout(() => {
+                        dragActive = true;
                         try { div.setPointerCapture(pointerId); } catch {}
                         div.style.touchAction = 'none';
                         div.classList.add('drag-to-hide-lift');
-                        $('btn-hiding').classList.add('drag-target');
+                        if (settings.dragToHide) $('btn-hiding').classList.add('drag-target');
+                        if (settings.dragToFavorite) $('board-tabs').classList.add('drag-target');
                     }, 2000);
                 }
             });
@@ -456,54 +457,72 @@ function renderGrid() {
                 const r = $('btn-hiding').getBoundingClientRect();
                 return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
             };
+            const overTabs = (x, y) => {
+                const r = $('board-tabs').getBoundingClientRect();
+                return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+            };
             const dropOnTrash = () => {
                 cell.hidden = true;
+                dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
+            };
+            const dropOnFavorite = () => {
+                if (cell.favorite) return;
+                const favCells = cells.filter(c => !!c.favorite);
+                const minOrd = favCells.length > 0 ? Math.min(...favCells.map(c => c.favoriteOrder ?? 0)) : 0;
+                cell.favorite = true;
+                cell.favoriteOrder = minOrd - 1;
                 dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
             };
             const endDragVisuals = () => {
                 div.style.touchAction = '';
                 div.classList.remove('drag-to-hide-lift');
                 $('btn-hiding').classList.remove('drag-target', 'drag-over');
+                $('board-tabs').classList.remove('drag-target', 'drag-over');
             };
 
             div.addEventListener('pointermove', (e) => {
-                if (dragHideTimer && !dragHideActive) {
+                if (dragTimer && !dragActive) {
                     const d = Math.sqrt((e.clientX - startX) ** 2 + (e.clientY - startY) ** 2);
-                    if (d > 15) { clearTimeout(dragHideTimer); dragHideTimer = null; }
+                    if (d > 15) { clearTimeout(dragTimer); dragTimer = null; }
                 }
-                if (dragHideActive) {
-                    $('btn-hiding').classList.toggle('drag-over', overTrash(e.clientX, e.clientY));
+                if (dragActive) {
+                    if (settings.dragToHide) $('btn-hiding').classList.toggle('drag-over', overTrash(e.clientX, e.clientY));
+                    if (settings.dragToFavorite) $('board-tabs').classList.toggle('drag-over', overTabs(e.clientX, e.clientY));
                 }
             });
 
-            // dragToHide 드래그 중 스크롤 차단 (non-passive 필수)
+            // 드래그 중 스크롤 차단 (non-passive 필수)
             div.addEventListener('touchmove', (e) => {
                 const t = e.touches[0];
                 if (t) { lastTX = t.clientX; lastTY = t.clientY; }
-                if (dragHideTimer && !dragHideActive && t) {
+                if (dragTimer && !dragActive && t) {
                     const d = Math.sqrt((t.clientX - startX) ** 2 + (t.clientY - startY) ** 2);
-                    if (d > 15) { clearTimeout(dragHideTimer); dragHideTimer = null; }
+                    if (d > 15) { clearTimeout(dragTimer); dragTimer = null; }
                 }
-                if (dragHideActive) {
+                if (dragActive) {
                     e.preventDefault();
-                    if (t) $('btn-hiding').classList.toggle('drag-over', overTrash(t.clientX, t.clientY));
+                    if (t) {
+                        if (settings.dragToHide) $('btn-hiding').classList.toggle('drag-over', overTrash(t.clientX, t.clientY));
+                        if (settings.dragToFavorite) $('board-tabs').classList.toggle('drag-over', overTabs(t.clientX, t.clientY));
+                    }
                 }
             }, { passive: false });
 
-            // touchend: 드래그-숨기기 드롭 + inCardDragAsClick.
+            // touchend: 드래그 드롭 + inCardDragAsClick.
             // 드래그 중엔 pointercancel이 발생해 pointerup이 오지 않으므로 touchend가 처리한다.
             // changedTouches[0]이 없을 때(일부 환경)는 touchmove에서 추적한 lastTX/Y를 사용한다.
             div.addEventListener('touchend', (e) => {
                 const tc = e.changedTouches[0];
                 const endX = tc ? tc.clientX : lastTX;
                 const endY = tc ? tc.clientY : lastTY;
-                if (dragHideActive) {
-                    dragHideActive = false;
-                    clearTimeout(dragHideTimer);
-                    dragHideTimer = null;
-                    const onTrash = overTrash(endX, endY);
+                if (dragActive) {
+                    dragActive = false;
+                    clearTimeout(dragTimer); dragTimer = null;
+                    const onTrash = settings.dragToHide && overTrash(endX, endY);
+                    const onTabs = settings.dragToFavorite && overTabs(endX, endY);
                     endDragVisuals();
                     if (onTrash) { e.preventDefault(); dropOnTrash(); }
+                    else if (onTabs) { e.preventDefault(); dropOnFavorite(); }
                     return;
                 }
                 // 탭은 pointerup이 이미 처리했으므로 이중 발화 방지
@@ -518,14 +537,15 @@ function renderGrid() {
             });
 
             div.addEventListener('pointerup', (e) => {
-                clearTimeout(dragHideTimer);
-                dragHideTimer = null;
-                if (dragHideActive) {
+                clearTimeout(dragTimer); dragTimer = null;
+                if (dragActive) {
                     // 마우스·스타일러스 드롭 처리 (터치는 touchend가 담당)
-                    dragHideActive = false;
-                    const onTrash = overTrash(e.clientX, e.clientY);
+                    dragActive = false;
+                    const onTrash = settings.dragToHide && overTrash(e.clientX, e.clientY);
+                    const onTabs = settings.dragToFavorite && overTabs(e.clientX, e.clientY);
                     endDragVisuals();
                     if (onTrash) dropOnTrash();
+                    else if (onTabs) dropOnFavorite();
                     return;
                 }
                 endDragVisuals();
@@ -541,9 +561,8 @@ function renderGrid() {
             });
 
             div.addEventListener('pointercancel', () => {
-                clearTimeout(dragHideTimer);
-                dragHideTimer = null;
-                if (!dragHideActive) endDragVisuals();
+                clearTimeout(dragTimer); dragTimer = null;
+                if (!dragActive) endDragVisuals();
             });
 
             onActivate(div, speak);
@@ -981,6 +1000,7 @@ function openSettings() {
     $('opt-reward-sound').checked = !!settings.rewardSound;
     $('opt-cancel-on-touch').checked = settings.cancelOnTouch !== false;
     $('opt-drag-to-hide').checked = !!settings.dragToHide;
+    $('opt-drag-to-favorite').checked = !!settings.dragToFavorite;
     $('opt-in-card-drag').checked = settings.inCardDragAsClick !== false;
     $('tab-scale').value = settings.tabScale || 1;
     $('tab-scale-value').textContent = `${Number(settings.tabScale || 1).toFixed(2)}배`;
@@ -1095,6 +1115,9 @@ function setupSettings() {
     });
     $('opt-drag-to-hide').addEventListener('change', (e) => {
         saveSetting('dragToHide', e.target.checked);
+    });
+    $('opt-drag-to-favorite').addEventListener('change', (e) => {
+        saveSetting('dragToFavorite', e.target.checked);
     });
     $('opt-in-card-drag').addEventListener('change', (e) => {
         saveSetting('inCardDragAsClick', e.target.checked);
