@@ -284,7 +284,9 @@ function emojiSpan(cell) {
 
 function cellImageHtml(cell, container) {
     container.innerHTML = '';
-    if (cell.image) {
+    // instanceof 검사: 과거 백업 가져오기 버그로 image에 Blob이 아닌 값({})이
+    // 남아 있을 수 있다 — 그대로 쓰면 createObjectURL이 던져 화면이 깨진다.
+    if (cell.image instanceof Blob) {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(cell.image);
         img.onload = () => URL.revokeObjectURL(img.src);
@@ -552,11 +554,11 @@ function renderGrid() {
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 120) { speak(); return; }
-                if (settings.inCardDragAsClick) {
-                    const threshold = div.getBoundingClientRect().height * 0.35;
-                    if (dist < threshold) speak();
-                }
+                // 설정 ON: 카드 세로의 35% 이내 드래그는 클릭 / OFF: 거의 제자리 탭만
+                const threshold = settings.inCardDragAsClick
+                    ? div.getBoundingClientRect().height * 0.35
+                    : 20;
+                if (dist < threshold) speak();
             });
 
             div.addEventListener('pointercancel', () => {
@@ -573,7 +575,9 @@ function renderGrid() {
         const empty = document.createElement('div');
         empty.className = 'grid-empty';
         empty.textContent = isFavorites
-            ? '즐겨찾기한 카드가 없어요. 편집 모드에서 카드의 ☆을 눌러 추가해 보세요.'
+            ? (settings.dragToFavorite
+                ? '즐겨찾기한 카드가 없어요. 편집 모드에서 카드의 ☆을 누르거나, 카드를 2초 누른 뒤 카테고리 탭으로 끌어 추가해 보세요.'
+                : '즐겨찾기한 카드가 없어요. 편집 모드에서 카드의 ☆을 눌러 추가해 보세요.')
             : '이 폴더에는 아직 카드가 없어요. 톱니바퀴를 길게 눌러 편집 모드에서 카드를 추가해 주세요.';
         grid.appendChild(empty);
     }
@@ -1899,7 +1903,8 @@ async function advanceBatch() {
 
 // ===== Backup (export / import) =====
 function blobToDataUrl(blob) {
-    if (!blob) return Promise.resolve(null);
+    // Blob이 아닌 값(과거 버그로 {}가 저장된 폴더 아이콘 등)은 조용히 비운다
+    if (!(blob instanceof Blob)) return Promise.resolve(null);
     return new Promise((resolve) => {
         const r = new FileReader();
         r.onload = () => resolve(r.result);
@@ -1914,10 +1919,15 @@ async function dataUrlToBlob(dataUrl) {
 
 async function exportData() {
     const out = {
-        version: 1,
+        // v2: 폴더 아이콘 이미지도 dataURL로 변환해 포함 (v1은 Blob이 JSON 직렬화에서
+        // {}로 깨진 채 저장돼 가져오기 후 아이콘이 사라지거나 렌더링이 실패했다)
+        version: 2,
         exportedAt: new Date().toISOString(),
         settings,
-        boards,
+        boards: await Promise.all(boards.map(async b => ({
+            ...b,
+            image: await blobToDataUrl(b.image),
+        }))),
         cells: await Promise.all(cells.map(async c => ({
             ...c,
             image: await blobToDataUrl(c.image),
@@ -1981,14 +1991,21 @@ async function importData(e) {
     if (!confirm('가져오기를 하면 지금 카드가 모두 교체됩니다. 계속할까요?')) return;
     // 기존 데이터를 지우기 전에 새 카드를 먼저 모두 변환해 둔다 —
     // 변환 중 오류가 나도 지금 쓰던 카드가 사라지지 않게 한다.
-    let preparedCells;
+    // dataURL 문자열일 때만 복원한다: v1 백업은 폴더 아이콘 Blob이 직렬화 과정에서
+    // 깨진 객체({})로 저장돼 있어, 그대로 넣으면 아이콘 렌더링이 실패한다.
+    const restoreImage = (v) => typeof v === 'string' ? dataUrlToBlob(v) : null;
+    let preparedBoards, preparedCells;
     try {
+        preparedBoards = await Promise.all(data.boards.map(async b => ({
+            ...b,
+            image: await restoreImage(b.image),
+        })));
         preparedCells = await Promise.all(data.cells.map(async c => ({
             ...c,
-            image: await dataUrlToBlob(c.image),
+            image: await restoreImage(c.image),
             audio: {
-                mom: await dataUrlToBlob(c.audio?.mom),
-                dad: await dataUrlToBlob(c.audio?.dad),
+                mom: await restoreImage(c.audio?.mom),
+                dad: await restoreImage(c.audio?.dad),
             },
         })));
     } catch {
@@ -1998,7 +2015,7 @@ async function importData(e) {
     try {
         await dbClear('boards');
         await dbClear('cells');
-        for (const b of data.boards) await dbPut('boards', b);
+        for (const b of preparedBoards) await dbPut('boards', b);
         for (const c of preparedCells) await dbPut('cells', c);
         if (data.settings) {
             for (const [k, v] of Object.entries(data.settings)) await saveSetting(k, v);
@@ -2009,6 +2026,8 @@ async function importData(e) {
         applyCardScale();
         applyLabelSize();
         applyAnimSetting();
+        applyTabScale();
+        applyTabPosition();
         renderTabs();
         renderGrid();
         updateVoiceIndicator();
