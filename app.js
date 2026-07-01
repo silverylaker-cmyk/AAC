@@ -23,7 +23,7 @@ const BOARD_COLOR_NAMES = {
 
 const DEFAULT_BOARDS = [
     { id: 'favorites', name: '즐겨찾기', color: '#5b9bd5', order: -1, emoji: '⭐', readonly: true },
-    { id: 'core',   name: '핵심',  color: '#f2a7c3', order: 0, emoji: '🌟' },
+    { id: 'core',   name: '핵심',  color: '#f2a7c3', order: 0, emoji: '☀️' },
     { id: 'people', name: '사람',  color: '#f5d76e', order: 1, emoji: '👥' },
     { id: 'food',   name: '음식',  color: '#f5a96e', order: 2, emoji: '🍎' },
     { id: 'feel',   name: '느낌',  color: '#8ec1f0', order: 3, emoji: '😊' },
@@ -212,6 +212,13 @@ async function backfillBoardEmojis() {
             const def = DEFAULT_BOARDS.find(d => d.id === b.id);
             if (def) { b.emoji = def.emoji; await dbPut('boards', b); changed = true; }
         }
+    }
+    // 핵심의 별(🌟)이 즐겨찾기 별(⭐)과 나란히 있어 헷갈림 — 해(☀️)로 교체 (기존 사용자 반영)
+    const core = boards.find(b => b.id === 'core');
+    if (core && core.emoji === '🌟') {
+        core.emoji = '☀️';
+        await dbPut('boards', core);
+        changed = true;
     }
     if (changed) boards = await dbGetAll('boards');
 }

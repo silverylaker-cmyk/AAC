@@ -408,9 +408,12 @@ button:focus-visible {
     transition: none;
 }
 
+/* 움직임은 없애되 "눌렀다"는 확인은 남긴다 — 밝기 변화는 모션이 아니라
+   감각 자극이 적으면서도 아이가 자기 입력을 확인할 수 있다 */
 .reduce-motion .cell:active,
 .reduce-motion .cell.speaking {
     transform: none;
+    filter: brightness(0.88);
 }
 
 .reduce-motion .speak-overlay-card {
@@ -427,6 +430,7 @@ button:focus-visible {
     .cell:active,
     .cell.speaking {
         transform: none;
+        filter: brightness(0.88);
     }
     .speak-overlay-card {
         animation: none;
@@ -579,20 +583,22 @@ button:focus-visible {
     to { transform: scale(1); opacity: 1; }
 }
 
+/* 오버레이의 목적은 '크게 보여주는 확인' — 화면의 짧은 변(vmin) 기준으로
+   그림과 글자를 키워, 큰 태블릿에서도 화면에 꽉 차게 보이도록 한다 */
 .speak-overlay-image img {
-    max-width: 45vw;
-    max-height: 45vh;
+    max-width: 62vw;
+    max-height: 55vh;
     object-fit: contain;
     border-radius: 18px;
 }
 
 .speak-overlay-image .emoji {
-    font-size: clamp(6rem, 20vw, 12rem);
+    font-size: clamp(6rem, 36vmin, 22rem);
     line-height: 1;
 }
 
 .speak-overlay-label {
-    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-size: clamp(2rem, 9vmin, 4.5rem);
     font-weight: 800;
 }
 
