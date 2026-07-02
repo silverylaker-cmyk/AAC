@@ -572,9 +572,9 @@ button:focus-visible {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 18px;
-    max-width: 80vw;
-    max-height: 80vh;
+    gap: 22px;
+    max-width: 88vw;
+    max-height: 88vh;
     animation: popIn 0.18s ease-out;
 }
 
@@ -585,21 +585,32 @@ button:focus-visible {
 
 /* 오버레이의 목적은 '크게 보여주는 확인' — 화면의 짧은 변(vmin) 기준으로
    그림과 글자를 키워, 큰 태블릿에서도 화면에 꽉 차게 보이도록 한다 */
+.speak-overlay-image {
+    /* 사진이 커서 카드 높이가 모자랄 때 글자 대신 그림 영역이 줄어들게 한다 */
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .speak-overlay-image img {
-    max-width: 62vw;
-    max-height: 55vh;
+    max-width: 74vw;
+    max-height: 60vh;
     object-fit: contain;
     border-radius: 18px;
 }
 
 .speak-overlay-image .emoji {
-    font-size: clamp(6rem, 36vmin, 22rem);
+    font-size: clamp(7rem, 43vmin, 26rem);
     line-height: 1;
 }
 
 .speak-overlay-label {
-    font-size: clamp(2rem, 9vmin, 4.5rem);
+    font-size: clamp(2.4rem, 11vmin, 5.4rem);
     font-weight: 800;
+    /* 카드가 꽉 차도 글자는 눌리거나 경계에 붙지 않게 */
+    flex-shrink: 0;
+    padding-bottom: 8px;
 }
 
 /* ---------- Modals ---------- */

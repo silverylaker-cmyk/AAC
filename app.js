@@ -471,7 +471,10 @@ function renderGrid() {
                 return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
             };
             const dropOnTrash = () => {
-                cell.hidden = true;
+                // 즐겨찾기 화면에서는 카드를 숨기는 게 아니라 즐겨찾기에서 뺀다
+                // (원래 카테고리에는 그대로 남는다)
+                if (isFavorites) cell.favorite = false;
+                else cell.hidden = true;
                 dbPut('cells', cell).then(() => dbGetAll('cells')).then(c => { cells = c; renderGrid(); });
             };
             const dropOnFavorite = () => {
