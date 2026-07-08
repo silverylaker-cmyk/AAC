@@ -90,7 +90,29 @@
             <h2 id="settings-title">보호자 설정</h2>
 
             <section class="settings-section">
+                <h3>✏️ 카드 편집</h3>
+                <p class="hint">카드를 새로 만들거나 사진·녹음·이름을 고칠 때 사용해요.</p>
+                <button id="btn-enter-edit" class="btn primary-btn">편집 모드 시작</button>
+                <p class="hint">편집 모드에서: 카드를 누르면 수정 · ↑↓로 순서 바꾸기 · ☆을 누르면 즐겨찾기 등록 · 맨 끝 + 칸으로 새 카드 추가</p>
+            </section>
+
+            <section class="settings-section">
+                <h3>🙈 카드 숨기기 (숨김 모드)</h3>
+                <p class="hint">지금은 보여주고 싶지 않은 카드를 잠시 가려요. 카드가 지워지는 게 아니라서 언제든 다시 보이게 할 수 있어요.</p>
+                <button id="btn-enter-hiding" class="btn primary-btn">숨김 모드 시작</button>
+                <p class="hint">카드 화면의 🗑️ 버튼을 3초 길게 눌러도 들어갈 수 있어요.</p>
+            </section>
+
+            <section class="settings-section">
+                <h3>📁 카테고리 관리</h3>
+                <p class="hint">카테고리(폴더)를 추가하거나 이름·아이콘·색을 바꾸고, ↑↓로 순서를 조정해요.</p>
+                <div id="board-manager" class="board-manager"></div>
+                <button id="btn-add-board" class="btn secondary-btn">+ 카테고리 추가</button>
+            </section>
+
+            <section class="settings-section">
                 <h3>🔊 목소리 선택</h3>
+                <p class="hint">카드를 누르면 어떤 목소리로 말할지 정해요.</p>
                 <div class="voice-options" id="voice-options">
                     <label><input type="radio" name="voice" value="mom"><span>엄마 목소리</span></label>
                     <label><input type="radio" name="voice" value="dad"><span>아빠 목소리</span></label>
@@ -100,8 +122,8 @@
             </section>
 
             <section class="settings-section">
-                <h3>🎙️ 목소리 일괄 녹음</h3>
-                <p class="hint">모든 단어를 차례대로 보여주며 녹음합니다. 5분이면 충분해요.</p>
+                <h3>🎙️ 엄마·아빠 목소리 녹음</h3>
+                <p class="hint">모든 단어를 하나씩 보여주며 차례대로 녹음해요. 5분이면 충분해요. 한 단어만 다시 녹음하려면 편집 모드에서 그 카드를 눌러 녹음하세요.</p>
                 <div class="row-buttons">
                     <button id="btn-batch-mom" class="btn secondary-btn">엄마 목소리 녹음하기</button>
                     <button id="btn-batch-dad" class="btn secondary-btn">아빠 목소리 녹음하기</button>
@@ -109,8 +131,9 @@
             </section>
 
             <section class="settings-section">
-                <h3>🗣️ 기계 음성 속도</h3>
-                <input type="range" id="tts-rate" min="0.5" max="1.3" step="0.1" aria-label="기계 음성 속도">
+                <h3>🗣️ 기계 음성 빠르기</h3>
+                <p class="hint">숫자가 작을수록 천천히 또박또박 읽어줘요.</p>
+                <input type="range" id="tts-rate" min="0.5" max="1.3" step="0.1" aria-label="기계 음성 빠르기">
                 <span id="tts-rate-value"></span>
                 <button id="btn-tts-test" class="btn small-btn">들어보기</button>
                 <p class="tts-warning" id="tts-no-voice" style="display:none;">이 기기에 한국어 음성이 없어서 기계 음성이 부정확할 수 있어요. 엄마/아빠 목소리를 녹음하거나 기기 설정에서 한국어 음성을 추가해 주세요.</p>
@@ -124,13 +147,43 @@
             </section>
 
             <section class="settings-section">
-                <h3>🔤 글자 크기</h3>
-                <p class="hint">카드 아래 글자(단어)의 크기예요.</p>
+                <h3>🔤 카드 글자 크기</h3>
+                <p class="hint">카드 아래에 적힌 단어의 글자 크기예요.</p>
                 <div class="segmented" id="label-size">
                     <button type="button" data-size="small">작게</button>
                     <button type="button" data-size="medium">보통</button>
                     <button type="button" data-size="large">크게</button>
                 </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>📐 카테고리 탭 크기·위치</h3>
+                <p class="hint">화면 위쪽의 카테고리 버튼이 크게 느껴지면 줄이거나, 왼쪽 세로 배치로 바꿀 수 있어요.</p>
+                <label class="field-label" for="tab-scale">아이콘 크기 (0.5배 ~ 1배)</label>
+                <input type="range" id="tab-scale" min="0.5" max="1" step="0.05" aria-label="카테고리 아이콘 크기">
+                <span id="tab-scale-value"></span>
+                <label class="field-label">표시 위치</label>
+                <div class="segmented" id="tab-position">
+                    <button type="button" data-pos="top">상단</button>
+                    <button type="button" data-pos="left">좌측</button>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>👆 터치 동작</h3>
+                <p class="hint">아이의 손 움직임에 맞춰 터치 반응을 조절해요.</p>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-in-card-drag">
+                    <span>카드 안 드래그도 누르기로 처리 (카드 위에서 손이 조금 밀려도 누른 것으로 인정)</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-drag-to-hide">
+                    <span>드래그로 카드 숨기기 (카드를 2초 누른 뒤 🗑️로 끌면 숨김 — 즐겨찾기 화면에서는 즐겨찾기 해제)</span>
+                </label>
+                <label class="toggle-row">
+                    <input type="checkbox" id="opt-drag-to-favorite">
+                    <span>드래그로 즐겨찾기 추가 (카드를 2초 누른 뒤 카테고리 탭으로 끌면 즐겨찾기 맨 앞에 등록)</span>
+                </label>
             </section>
 
             <section class="settings-section">
@@ -151,47 +204,6 @@
             </section>
 
             <section class="settings-section">
-                <h3>👆 터치 동작</h3>
-                <label class="toggle-row">
-                    <input type="checkbox" id="opt-in-card-drag">
-                    <span>카드 안 드래그도 누르기로 처리 (카드 위에서 손이 조금 움직여도 재생)</span>
-                </label>
-                <label class="toggle-row">
-                    <input type="checkbox" id="opt-drag-to-hide">
-                    <span>드래그로 카드 숨기기 (카드를 2초 누른 후 🗑️로 끌면 숨김 처리)</span>
-                </label>
-                <label class="toggle-row">
-                    <input type="checkbox" id="opt-drag-to-favorite">
-                    <span>드래그로 즐겨찾기 추가 (카드를 2초 누른 후 카테고리 탭으로 끌면 즐겨찾기 맨 앞에 등록)</span>
-                </label>
-            </section>
-
-            <section class="settings-section">
-                <h3>📐 카테고리 탭</h3>
-                <label class="field-label" for="tab-scale">아이콘 크기 (0.5배 ~ 1배)</label>
-                <input type="range" id="tab-scale" min="0.5" max="1" step="0.05" aria-label="카테고리 아이콘 크기">
-                <span id="tab-scale-value"></span>
-                <label class="field-label">표시 위치</label>
-                <div class="segmented" id="tab-position">
-                    <button type="button" data-pos="top">상단</button>
-                    <button type="button" data-pos="left">좌측</button>
-                </div>
-            </section>
-
-            <section class="settings-section">
-                <h3>📁 카테고리(폴더)</h3>
-                <p class="hint">폴더를 추가하거나 이름·색·순서(↑↓)를 바꿀 수 있어요.</p>
-                <div id="board-manager" class="board-manager"></div>
-                <button id="btn-add-board" class="btn secondary-btn">+ 폴더 추가</button>
-            </section>
-
-            <section class="settings-section">
-                <h3>✏️ 카드 편집</h3>
-                <button id="btn-enter-edit" class="btn primary-btn">편집 모드 시작</button>
-                <p class="hint">편집 모드에서 카드를 누르면 수정, 카드의 ↑↓ 버튼으로 순서를 바꿉니다.</p>
-            </section>
-
-            <section class="settings-section">
                 <h3>📊 사용 기록</h3>
                 <p class="hint">아이가 어떤 카드를 자주 누르는지 보여줍니다. 기록은 이 태블릿 안에만 저장돼요.</p>
                 <p id="usage-total" class="usage-total"></p>
@@ -201,13 +213,13 @@
 
             <section class="settings-section">
                 <h3>🗂️ 추천 카드 더 불러오기</h3>
-                <p class="hint">기본 제공 단어 카드를 한 번에 추가합니다. 이미 있는 단어는 건너뜁니다.</p>
+                <p class="hint">앱에 기본으로 들어 있는 단어 카드를 한 번에 추가해요. 이미 있는 단어는 건너뜁니다.</p>
                 <button id="btn-load-starter" class="btn secondary-btn">추천 카드 추가</button>
             </section>
 
             <section class="settings-section">
-                <h3>💾 백업</h3>
-                <p class="hint">태블릿을 바꾸거나 초기화하기 전에 꼭 내보내기를 해두세요. 사진과 녹음이 모두 포함됩니다.</p>
+                <h3>💾 백업 (내보내기·가져오기)</h3>
+                <p class="hint">모든 카드·사진·녹음은 이 태블릿 안에만 저장돼요. 태블릿을 바꾸거나 초기화하기 전에 꼭 파일로 내보내 두세요.</p>
                 <div class="row-buttons">
                     <button id="btn-export" class="btn secondary-btn">파일로 내보내기</button>
                     <button id="btn-import" class="btn secondary-btn">파일에서 가져오기</button>
@@ -216,7 +228,7 @@
             </section>
 
             <section class="settings-section">
-                <h3>🖥️ 화면</h3>
+                <h3>🖥️ 전체 화면</h3>
                 <button id="btn-fullscreen" class="btn secondary-btn">전체 화면 켜기/끄기</button>
                 <p class="hint">아이가 다른 앱으로 나가지 못하게 하려면 안드로이드의 ‘화면 고정’(설정 → 보안 → 앱 고정) 기능을 함께 사용하세요.</p>
             </section>

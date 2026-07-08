@@ -1167,6 +1167,13 @@ function setupSettings() {
         $('edit-banner').style.display = 'flex';
         renderGrid();
     });
+
+    // 설정은 이미 보호자 확인(산수 문제)을 거쳐 열리므로 바로 숨김 모드로 들어간다
+    $('btn-enter-hiding').addEventListener('click', () => {
+        $('settings-modal').style.display = 'none';
+        if (homeMode) setHomeMode(false); // 홈 화면에는 숨길 카드가 없으므로 카드 화면으로
+        enterHidingMode();
+    });
     $('btn-exit-edit').addEventListener('click', () => {
         editMode = false;
         $('edit-banner').style.display = 'none';
