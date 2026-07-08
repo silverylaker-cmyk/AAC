@@ -89,6 +89,8 @@
         <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
             <h2 id="settings-title">보호자 설정</h2>
 
+            <button id="btn-open-manual" class="btn secondary-btn">📖 설명서 — 처음이신가요? 사용법을 알려드려요</button>
+
             <section class="settings-section">
                 <h3>✏️ 카드 편집</h3>
                 <p class="hint">카드를 새로 만들거나 사진·녹음·이름을 고칠 때 사용해요.</p>
@@ -238,6 +240,109 @@
 
             <div class="modal-actions">
                 <button id="settings-close" class="btn primary-btn">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual (사용 설명서) modal -->
+    <div id="manual-modal" class="modal" style="display:none;">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="manual-title">
+            <h2 id="manual-title">📖 사용 설명서</h2>
+
+            <section class="settings-section">
+                <h3>🌈 이 앱은 무엇인가요?</h3>
+                <p class="hint">말로 표현이 어려운 아이가 그림 카드를 눌러 마음을 전할 수 있게 돕는 의사소통 앱이에요. 카드를 누르면 태블릿이 대신 말해줍니다.</p>
+                <p class="hint">모든 자료(카드·사진·녹음)는 이 기기 안에만 저장되고, 그림 검색을 뺀 모든 기능은 인터넷 없이 동작해요.</p>
+            </section>
+
+            <section class="settings-section">
+                <h3>👦 아이 화면 사용법</h3>
+                <ul class="manual-list">
+                    <li>위쪽(또는 왼쪽)의 <b>카테고리 버튼</b>을 누르면 그 주제의 카드들이 나와요.</li>
+                    <li><b>카드를 누르면</b> 큰 그림과 함께 소리내어 말해줘요.</li>
+                    <li>말하는 중에 큰 그림 화면을 한 번 누르면 <b>바로 멈춰요</b>.</li>
+                    <li><b>🏠 버튼</b>을 누르면 카테고리만 큰 카드로 보여주는 홈 화면이 돼요. 다시 누르면 돌아와요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>🔒 보호자 설정 들어가기</h3>
+                <ul class="manual-list">
+                    <li>오른쪽 위 <b>⚙️(톱니바퀴)를 3초간 길게</b> 누르면 산수 문제가 나와요. 정답을 넣으면 설정이 열려요.</li>
+                    <li>아이가 실수로 설정을 바꾸지 못하게 하는 장치예요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>✏️ 카드 만들기·고치기</h3>
+                <ul class="manual-list">
+                    <li>설정에서 <b>"편집 모드 시작"</b>을 누르면 편집 모드가 돼요.</li>
+                    <li>카드를 누르면 이름·그림·녹음을 고칠 수 있어요.</li>
+                    <li>그림은 3가지 방법: <b>📷 사진/파일</b>, <b>🔍 그림 검색</b>(인터넷 필요), <b>😊 이모지</b></li>
+                    <li><b>"읽어줄 말"</b>을 넣으면 카드에 적힌 단어와 다르게 말해줄 수 있어요. (예: 카드는 ‘물’, 읽는 말은 ‘물 주세요’)</li>
+                    <li>각 카테고리 맨 끝의 <b>+ 칸</b>으로 새 카드를 만들어요.</li>
+                    <li>카드의 <b>↑↓ 버튼</b>으로 순서를 바꿔요.</li>
+                    <li>다 되면 위쪽 노란 띠의 <b>"편집 끝내기"</b>를 누르세요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>🔊 목소리 바꾸기</h3>
+                <ul class="manual-list">
+                    <li>기계 음성 대신 <b>엄마·아빠의 진짜 목소리</b>로 말해줄 수 있어요.</li>
+                    <li>설정의 <b>"엄마·아빠 목소리 녹음"</b>으로 모든 단어를 한 번에 녹음하고, <b>"목소리 선택"</b>에서 누구 목소리로 말할지 고르세요.</li>
+                    <li>녹음이 없는 단어는 자동으로 기계 음성이 대신 읽어줘요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>⭐ 즐겨찾기</h3>
+                <ul class="manual-list">
+                    <li>자주 쓰는 카드를 <b>⭐ 즐겨찾기 카테고리</b>에 모아둘 수 있어요.</li>
+                    <li>편집 모드에서 카드 왼쪽 아래 <b>☆을 누르면</b> 등록·해제돼요.</li>
+                    <li>설정의 터치 동작에서 "드래그로 즐겨찾기 추가"를 켜면: 카드를 <b>2초 누른 뒤 카테고리 탭 쪽으로 끌어다 놓으면</b> 즐겨찾기 맨 앞에 등록돼요.</li>
+                    <li>즐겨찾기 화면에서 카드를 2초 누른 뒤 🗑️로 끌면 즐겨찾기에서 빠져요. (카드는 원래 카테고리에 그대로 있어요)</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>🙈 카드 숨기기</h3>
+                <ul class="manual-list">
+                    <li>지금은 보여주고 싶지 않은 카드를 잠시 가릴 수 있어요. <b>삭제가 아니라</b> 언제든 되돌릴 수 있어요.</li>
+                    <li>설정의 <b>"숨김 모드 시작"</b> 또는 카드 화면의 <b>🗑️를 3초 길게</b> 누르면 숨김 모드가 돼요. 카드를 누를 때마다 숨김·해제가 바뀌어요.</li>
+                    <li>설정에서 "드래그로 카드 숨기기"를 켜면: 카드를 <b>2초 누른 뒤 🗑️로 끌어다 놓으면</b> 바로 숨겨져요.</li>
+                    <li>숨긴 카드를 다 되살리려면 숨김 모드의 <b>"숨김 모두 해제"</b>를 누르세요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>📁 카테고리 꾸미기</h3>
+                <ul class="manual-list">
+                    <li>설정의 <b>"카테고리 관리"</b>에서 새 카테고리를 만들고 이름·색·아이콘을 정할 수 있어요.</li>
+                    <li>카테고리 버튼이 크게 느껴지면 설정에서 <b>크기를 줄이거나 왼쪽 세로 배치</b>로 바꿀 수 있어요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>💾 백업 — 꼭 해두세요!</h3>
+                <ul class="manual-list">
+                    <li>모든 자료는 <b>이 태블릿 안에만</b> 있어요. 태블릿을 바꾸거나 앱 데이터를 지우면 사라져요.</li>
+                    <li>설정 → 백업 → <b>"파일로 내보내기"</b>로 파일을 저장해 두고, 새 기기에서 <b>"파일에서 가져오기"</b>로 복원하세요.</li>
+                </ul>
+            </section>
+
+            <section class="settings-section">
+                <h3>❓ 자주 묻는 질문</h3>
+                <ul class="manual-list">
+                    <li><b>소리가 안 나요</b> → 기기 음량을 확인하세요. 한국어 기계 음성이 없는 태블릿이면 엄마·아빠 목소리를 녹음해 쓰세요.</li>
+                    <li><b>카드가 사라졌어요</b> → 숨김 모드에 들어가면 숨겨진 카드가 빗금으로 보여요. 눌러서 해제하거나 "숨김 모두 해제"를 누르세요.</li>
+                    <li><b>인터넷이 필요한가요?</b> → 그림 검색만 인터넷이 필요해요. 나머지는 모두 인터넷 없이 돼요.</li>
+                    <li><b>아이가 다른 앱으로 나가요</b> → 설정에서 전체 화면을 켜고, 안드로이드의 ‘화면 고정’(앱 고정) 기능을 함께 쓰세요.</li>
+                </ul>
+            </section>
+
+            <div class="modal-actions">
+                <button id="manual-close" class="btn primary-btn">닫기</button>
             </div>
         </div>
     </div>

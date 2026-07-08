@@ -1084,6 +1084,13 @@ async function renderUsageStats() {
 function setupSettings() {
     $('settings-close').addEventListener('click', () => { $('settings-modal').style.display = 'none'; });
 
+    $('btn-open-manual').addEventListener('click', () => {
+        const modal = $('manual-modal');
+        modal.style.display = 'flex';
+        modal.querySelector('.modal-box').scrollTop = 0; // 항상 처음부터 읽게
+    });
+    $('manual-close').addEventListener('click', () => { $('manual-modal').style.display = 'none'; });
+
     document.querySelectorAll('input[name="voice"]').forEach(r => {
         r.addEventListener('change', () => {
             saveSetting('voice', r.value);
@@ -2066,6 +2073,7 @@ function setupEscapeToClose() {
         ['batch-modal', 'batch-quit'],
         ['editor-modal', 'editor-cancel'],
         ['board-modal', 'board-cancel'],
+        ['manual-modal', 'manual-close'], // 설명서는 설정 위에 겹쳐 뜨므로 먼저 닫는다
         ['settings-modal', 'settings-close'],
         ['gate-modal', 'gate-cancel'],
     ];

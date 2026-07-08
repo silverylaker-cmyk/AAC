@@ -669,6 +669,19 @@ button:focus-visible {
     line-height: 1.5;
 }
 
+/* 사용 설명서 목록 */
+.manual-list {
+    padding-left: 22px;
+    margin: 8px 0;
+}
+
+.manual-list li {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin: 7px 0;
+    word-break: keep-all;
+}
+
 .backup-status {
     font-size: 0.85rem;
     color: var(--muted);
