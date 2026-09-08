@@ -177,6 +177,7 @@ let settings = { voice: 'tts', ttsRate: 0.9, cardScale: 1, labelSize: 'medium', 
 const LABEL_SCALES = { small: 0.85, medium: 1, large: 1.25 };
 let activeBoardId = 'core';
 let editMode = false;
+let copiedCell = null; // 편집 모드에서 📋로 복사해 둔 카드 내용 (앱을 닫으면 사라짐)
 let homeMode = false;
 let hidingMode = false;
 let currentAudio = null;
@@ -425,6 +426,27 @@ function renderGrid() {
             });
             div.appendChild(starBtn);
 
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.textContent = '📋';
+            copyBtn.setAttribute('aria-label', `${cell.label} 카드 복사`);
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 원본이 나중에 수정·삭제돼도 붙여넣기가 되도록 이 시점의 내용을 복사해 둔다
+                copiedCell = {
+                    label: cell.label,
+                    speech: cell.speech || null,
+                    emoji: cell.emoji || null,
+                    image: cell.image instanceof Blob ? cell.image : null,
+                    audio: {
+                        mom: cell.audio?.mom instanceof Blob ? cell.audio.mom : null,
+                        dad: cell.audio?.dad instanceof Blob ? cell.audio.dad : null,
+                    },
+                };
+                updatePasteButton();
+            });
+            div.appendChild(copyBtn);
+
             div.setAttribute('aria-label', `${cell.label} 카드 편집`);
             const edit = () => openEditor(cell);
             div.addEventListener('click', edit);
@@ -604,7 +626,44 @@ function renderGrid() {
         onActivate(add, addCard);
         grid.appendChild(add);
     }
+    updatePasteButton();
     requestAnimationFrame(applyEmojiSize);
+}
+
+// 편집 배너의 붙여넣기 버튼 — 복사해 둔 카드가 있을 때만 보인다.
+// 즐겨찾기는 카드를 담는 실제 폴더가 아니므로 붙여넣기를 막는다.
+function updatePasteButton() {
+    const btn = $('btn-paste-card');
+    if (!btn) return;
+    if (!copiedCell) { btn.style.display = 'none'; return; }
+    btn.style.display = '';
+    const isFav = activeBoardId === 'favorites';
+    btn.disabled = isFav;
+    btn.textContent = `📋 '${copiedCell.label}' 붙여넣기`;
+    btn.title = isFav ? '즐겨찾기에는 붙여넣을 수 없어요. 다른 카테고리를 선택하세요.' : '';
+}
+
+async function pasteCopiedCell() {
+    if (!copiedCell || activeBoardId === 'favorites') return;
+    const newCell = {
+        id: crypto.randomUUID(),
+        label: copiedCell.label,
+        speech: copiedCell.speech,
+        emoji: copiedCell.emoji,
+        image: copiedCell.image,
+        audio: { mom: copiedCell.audio.mom, dad: copiedCell.audio.dad },
+        boardId: activeBoardId,
+        // 전체 최대 order + 1 → 현재 카테고리의 맨 아래에 붙는다
+        order: Math.max(0, ...cells.map(c => c.order)) + 1,
+    };
+    try {
+        await dbPut('cells', newCell);
+    } catch {
+        alert('카드를 붙여넣지 못했어요. 저장 공간이 부족할 수 있어요.');
+        return;
+    }
+    cells = await dbGetAll('cells');
+    renderGrid();
 }
 
 // ===== Home screen (카테고리만 보이는 화면) =====
@@ -1186,6 +1245,8 @@ function setupSettings() {
         $('edit-banner').style.display = 'none';
         renderGrid();
     });
+
+    $('btn-paste-card').addEventListener('click', pasteCopiedCell);
 
     $('btn-batch-mom').addEventListener('click', () => startBatch('mom'));
     $('btn-batch-dad').addEventListener('click', () => startBatch('dad'));
